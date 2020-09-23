@@ -307,10 +307,10 @@ int main(int argc, char * argv[]){
 
 
   //make transitions
-  vector<int> sorted_mode_idx(mode_energies.size());
-  iota(sorted_mode_idx.begin(),sorted_mode_idx.end(),0);
+  vector<int> s_idx(mode_energies.size());
+  iota(s_idx.begin(),s_idx.end(),0);
 
-  sort(sorted_mode_idx.begin(),sorted_mode_idx.end(),
+  sort(s_idx.begin(),s_idx.end(),
        [&x=mode_couplings](auto i1,auto i2){ return x[i1] > x[i2];});
 
   
@@ -318,48 +318,139 @@ int main(int argc, char * argv[]){
   //make full transition list
   //I basically implimented a nested for loop with transform and for each (this is more for my learning than for practicality.
   
-  vector<vector<double>> transitions(conf.max_occupation);
-  transform(transitions.begin(),transitions.end(),transitions.begin(),
+  vector<vector<double>> g(conf.max_occupation);
+  transform(g.begin(),g.end(),g.begin(),
 	    [&m=mode_couplings, j=1](vector<double> el) mutable {
 	      vector<double> v(m);
 	      transform(v.begin(),v.end(),v.begin(), [&j](double g){return sqrt(j)*g;});
 	      j++;
 	      return v;
 	    });
-  for(auto &v:transitions){
-    for(auto i:sorted_mode_idx){
+  for(auto &v:g){
+    for(auto i:s_idx){
       //cout << v[i] << " " ;
     }
     //cout << endl;
   }
-  for(auto i:sorted_mode_idx){
+  for(auto i:s_idx){
     //cout << mode_couplings[i] << endl;
     
   }
-
+  const int epsilon = conf.energy_cutoff;
   const int num_spins = 2;
   const int num_modes = 300;
   const int num_bits = 4;
+  const int max_level = 1<<num_bits -1;
   const int giant_words = (num_bits*num_modes)/64 +1;
   typedef partial_config<bool,num_modes,num_bits,giant_words> full_config;
   typedef vector<pair<full_config,complex<double>>> state_vec;
-  state_vec psi(1);
-  psi[0].first.set_spin(true);
-  psi[0].second = 1;
-  
+  state_vec psi_amp(1);
+  state_vec psi_lbl;
+  psi_lbl[0].first.set_spin(true);
+  psi_lbl[0].second = 1;
+  psi_lbl = psi_lbl.copy();
   double t = conf.t0;
   double dt = (conf.tf-conf.t0)/( double(conf.N));
   while(t < conf.tf){
+    
+    //iterate through each component of state vector
+    //psi_n+1 = (1 - i H dt)psi_n
+    //        = psi_n - i H dt psi_n
+    //delta_psi = (-i H dt) psi_n
+    //psi_n = \sum spin (x) [mode_levels]
+    
+    state_vec delta_psi();
+    
+    for(auto &conf_i:psi){
+      //g :: g[mode num][sqrt]
+      //go through each spin
+      complex<double> c_i = conf_i.second;
+      double magnitude = abs(c_i);
+      double pre_mul_mag = magnitude*dt;
+      if(premul_mag*g[0][max_level] < epsilon){
+	break; //stop if c_i *H_max dt < epsilon
+      }
+      complex<double> pre_mul = -1i*c_i*dt;
+      double reduced_epsilon = epsilon/pre_mul_mag;// dt g[][] c_i < ep -->g[][]<ep/(dt c_i)
+      for(int j = 0; (j < num_modes)&&(g[j][max_level] >= reduced epsilon) ;j++){
+	int level = conf_i.first.get_mode(j);
+	switch(level){
+	case 0:
+	  complex<double> amp_delta = pre_mul*g[j][level+1];//only do the raising operator
+	  full_config c_delta = conf_i.first;
+	  c_delta.increment(j);
+	  c_delta.set_spin(~c_delta.get_spin());
+	  delta_psi.push_back({c_delta,amp_delta});
+	  break;
+	case max_level:
+	  complex<double> amp_delta = pre_mul*g[j][level-1];//only do lowering op
+	  full_config c_delta = conf_i.first;
+	  c_delta.decrement(j);
+  	  c_delta.set_spin(~c_delta.get_spin());
+	  delta_psi.push_back({c_delta,amp_delta});
+	default :
+	  complex<double> amp_delta_raise = pre_mul*g[j][level+1];//do both
+	  full_config c_delta_raise = conf_i.first;
+	  c_delta_raise.increment(j);
+	  c_delta_raise.set_spin(~c_delta_raise.get_spin());
+	  delta_psi.push_back({c_delta_raise,amp_delta_raise});
+	  
+	  complex<double> amp_delta_lower = pre_mul*g[j][level];
+	  full_config c_delta_lower = conf_i.first;
+	  c_delta_lower.decrement(j);
+	  c_delta_lower.set_spin(~c_delta_lower.get_spin());
+	  delta_psi.push_back({c_delta_lower,amp_delta_lower});
+	}//end switch
+      }//end mode loop
+    }//end config loop
+  
 
-    state_vec delta_phi();
-    for(auto &conf_i:v){
 
-      
-      
-      
+    //~~~~~~~~~~merge and add existing configuration amplitudes~~~~~~~~~~~~~~~~~~~~~
+    
+    //delta psi is small, so do a small number of search ops to
+    //do the duplicate problem beforehand
+    typedef state_vec::iterator sIt;
+    vector<pair<sIt,sIt>> eql_itors;
+    //merge the duplicates between delta_psi and ps
+    for(int i = 0; i<delta_psi.size(); i++ ){
+      pair<auto,auto> eql= equal_range(psi_lbl.begin(),psi_lbl.end(),delta_psi[i].first(),
+				       [](auto &it1,auto&it2){return it1.first < it2.first ;}) ;
+      if(eql.first ~=eql.second){
+	//found a dup
+	eql_itors.push_back(eql);
+	//add amplitude
+	psi_lbl.second += *eql.first.second;
+	//remove from delta_psi
+	delta_psi.erase(eql.first);
+      }
     }
+    
+    //sort delta_psi
+    sort(delta_psi.begin(),delta_psi.end(),
+	 [](auto &it1,auto&it2){return it1.first < it2.first ;});
+    //append delta_psi to end of psi 
+    //reserve space so iterators don't change
+    psi_lbl.reserve(psi_lbl.size() + delta_psi.size());
+    //save midpoint for later
+    state_vec::iterator midpoint_lbl = psi_lbl.end();
+    //move the delta elements over to psi using move_iter, which
+    //moves elements rather than copying them
+    psi_lbl.insert(psi_lbl.end(),
+		   make_move_iterator(delta_psi.begin()),
+		   make_move_iterator(delta_psi.end()));
+    
+    inplace_merge(psi_lbl.begin(),midpoint_lbl,psi_lbl.end(),
+		  [](auto &it1,auto&it2){return it1.first < it2.first ;});// [first,middle) and [middle,last)
+
+    psi_amp.resize(psi_lbl.size());
+    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+    sort(psi_amp.begin(),psi_amp.end(),[](auto it1,auto it2){
+      return ( abs(*it1.second) > abs(*it2.second));});
+
 
     t +=dt;
+    
   }
 
   
