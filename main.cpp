@@ -69,6 +69,7 @@ class partial_config{
   spin_type spin;
 public:
   
+  partial_config(){}
   spin_type get_spin()const{
     return spin;
   }
@@ -93,7 +94,7 @@ public:
   }
 
   void operator=(const partial_config &c) {
-    copy(begin(c),end(c),begin(rep));
+    copy(begin(c.rep),end(c.rep),begin(rep));
     spin = c.spin;
   }
 
@@ -343,12 +344,13 @@ int main(int argc, char * argv[]){
   const int max_level = 1<<num_bits -1;
   const int giant_words = (num_bits*num_modes)/64 +1;
   typedef partial_config<bool,num_modes,num_bits,giant_words> full_config;
-  typedef vector<pair<full_config,complex<double>>> state_vec;
-  state_vec psi_amp(1);
-  state_vec psi_lbl;
+  typedef pair<full_config,complex<double>> state_pair;
+  typedef vector<state_pair> state_vec;
+  state_vec psi_lbl(1);
+  state_pair p3;
   psi_lbl[0].first.set_spin(true);
   psi_lbl[0].second = 1;
-  psi_lbl = psi_lbl.copy();
+  state_vec psi_amp(psi_lbl);
   double t = conf.t0;
   double dt = (conf.tf-conf.t0)/( double(conf.N));
   while(t < conf.tf){
@@ -359,47 +361,50 @@ int main(int argc, char * argv[]){
     //delta_psi = (-i H dt) psi_n
     //psi_n = \sum spin (x) [mode_levels]
     
-    state_vec delta_psi();
+    state_vec delta_psi;
     
-    for(auto &conf_i:psi){
+    for(auto &conf_i:psi_amp){
       //g :: g[mode num][sqrt]
       //go through each spin
       complex<double> c_i = conf_i.second;
       double magnitude = abs(c_i);
       double pre_mul_mag = magnitude*dt;
-      if(premul_mag*g[0][max_level] < epsilon){
+      if(pre_mul_mag*g[0][max_level] < epsilon){
 	break; //stop if c_i *H_max dt < epsilon
       }
       complex<double> pre_mul = -1i*c_i*dt;
       double reduced_epsilon = epsilon/pre_mul_mag;// dt g[][] c_i < ep -->g[][]<ep/(dt c_i)
-      for(int j = 0; (j < num_modes)&&(g[j][max_level] >= reduced epsilon) ;j++){
+      for(int j = 0; (j < num_modes)&&(g[j][max_level] >= reduced_epsilon) ;j++){
 	int level = conf_i.first.get_mode(j);
+	state_pair p;
 	switch(level){
 	case 0:
-	  complex<double> amp_delta = pre_mul*g[j][level+1];//only do the raising operator
-	  full_config c_delta = conf_i.first;
-	  c_delta.increment(j);
-	  c_delta.set_spin(~c_delta.get_spin());
-	  delta_psi.push_back({c_delta,amp_delta});
+	  p.second = pre_mul*g[j][level+1];//only do the raising operator
+	  p.first = conf_i.first;
+	  p.first.increment_mode(j);
+	  p.first.set_spin(~p.first.get_spin());
+	  delta_psi.push_back(p);
 	  break;
 	case max_level:
-	  complex<double> amp_delta = pre_mul*g[j][level-1];//only do lowering op
-	  full_config c_delta = conf_i.first;
-	  c_delta.decrement(j);
-  	  c_delta.set_spin(~c_delta.get_spin());
-	  delta_psi.push_back({c_delta,amp_delta});
+	  p.second = pre_mul*g[j][level-1];//only do lowering op
+	  p.first = conf_i.first;
+	  p.first.decrement_mode(j);
+  	  p.first.set_spin(~p.first.get_spin());
+	  delta_psi.push_back(p);
+	  break;
 	default :
-	  complex<double> amp_delta_raise = pre_mul*g[j][level+1];//do both
-	  full_config c_delta_raise = conf_i.first;
-	  c_delta_raise.increment(j);
-	  c_delta_raise.set_spin(~c_delta_raise.get_spin());
-	  delta_psi.push_back({c_delta_raise,amp_delta_raise});
-	  
-	  complex<double> amp_delta_lower = pre_mul*g[j][level];
-	  full_config c_delta_lower = conf_i.first;
-	  c_delta_lower.decrement(j);
-	  c_delta_lower.set_spin(~c_delta_lower.get_spin());
-	  delta_psi.push_back({c_delta_lower,amp_delta_lower});
+	  p.second = pre_mul*g[j][level+1];//do both
+	  p.first = conf_i.first;
+	  p.first.increment_mode(j);
+	  p.first.set_spin(~p.first.get_spin());
+	  delta_psi.push_back(p);
+
+	  state_pair p2;
+	  p2.second = pre_mul*g[j][level];
+	  p2.first = conf_i.first;
+	  p2.first.decrement_mode(j);
+	  p2.first.set_spin(~p2.first.get_spin());
+	  delta_psi.push_back(p);
 	}//end switch
       }//end mode loop
     }//end config loop
@@ -414,15 +419,15 @@ int main(int argc, char * argv[]){
     vector<pair<sIt,sIt>> eql_itors;
     //merge the duplicates between delta_psi and ps
     for(int i = 0; i<delta_psi.size(); i++ ){
-      pair<auto,auto> eql= equal_range(psi_lbl.begin(),psi_lbl.end(),delta_psi[i].first(),
+      pair<sIt,sIt> eql= equal_range(psi_lbl.begin(),psi_lbl.end(),delta_psi[i],
 				       [](auto &it1,auto&it2){return it1.first < it2.first ;}) ;
-      if(eql.first ~=eql.second){
+      if(eql.first !=eql.second){
 	//found a dup
 	eql_itors.push_back(eql);
 	//add amplitude
-	psi_lbl.second += *eql.first.second;
+	(eql.first)->second += delta_psi[i].second;
 	//remove from delta_psi
-	delta_psi.erase(eql.first);
+	delta_psi.erase(delta_psi.begin()+i);
       }
     }
     
@@ -446,7 +451,7 @@ int main(int argc, char * argv[]){
     psi_amp.resize(psi_lbl.size());
     copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
     sort(psi_amp.begin(),psi_amp.end(),[](auto it1,auto it2){
-      return ( abs(*it1.second) > abs(*it2.second));});
+      return ( abs(it1.second) > abs(it2.second));});
 
 
     t +=dt;
