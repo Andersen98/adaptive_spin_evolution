@@ -190,7 +190,7 @@ vector<long unsigned> get_mask(){
   int _num_bits = bits;
   unsigned long mode_tail = 1;
   vector<long unsigned> mask(64/_num_bits);
-  for(int i = 0; i < _num_bits; i++){
+  for(int i = 0; i < (_num_bits-1); i++){
     mode_tail |= mode_tail<<1;
   }
   for(int i = 0; i < 64/_num_bits; i++){
@@ -339,9 +339,9 @@ int main(int argc, char * argv[]){
   }
   const int epsilon = conf.energy_cutoff;
   const int num_spins = 2;
-  const int num_modes = 300;
+  const int num_modes = 100;
   const int num_bits = 4;
-  const int max_level = 1<<num_bits -1;
+  const int max_level = (1<<num_bits) -1;
   const int giant_words = (num_bits*num_modes)/64 +1;
   typedef partial_config<bool,num_modes,num_bits,giant_words> full_config;
   typedef pair<full_config,complex<double>> state_pair;
@@ -352,6 +352,7 @@ int main(int argc, char * argv[]){
   state_vec psi_amp(psi_lbl);
   double t = conf.t0;
   double dt = (conf.tf-conf.t0)/( double(conf.N));
+  assert(g[0].size() == num_modes);
   while(t < conf.tf){
     
     //iterate through each component of state vector
@@ -363,48 +364,58 @@ int main(int argc, char * argv[]){
     state_vec delta_psi;
     
     for(auto &conf_i:psi_amp){
-      //g :: g[mode num][sqrt]
+      //g :: g[sqrt][s_idx[mode_num]]
       //go through each spin
       complex<double> c_i = conf_i.second;
       double magnitude = abs(c_i);
       double pre_mul_mag = magnitude*dt;
-      if(pre_mul_mag*g[0][max_level] < epsilon){
+      if(pre_mul_mag*g[max_level][s_idx[0]] < epsilon){
 	break; //stop if c_i *H_max dt < epsilon
       }
       complex<double> pre_mul = -1i*c_i*dt;
       double reduced_epsilon = epsilon/pre_mul_mag;// dt g[][] c_i < ep -->g[][]<ep/(dt c_i)
-      for(int j = 0; (j < num_modes)&&(g[j][max_level] >= reduced_epsilon) ;j++){
+      int j = 0;
+      while((j < num_modes) && (g[max_level][s_idx[j]] >= reduced_epsilon) ){
 	int level = conf_i.first.get_mode(j);
+	
+	/*for(int w = 0; w < psi_amp.size() ; w++){
+	  for(int q = 0; q < num_modes; q++){
+	    if( (psi_amp[w].first.get_mode(q))  > 0)
+	      cout << psi_amp[w].first.get_mode(j) << endl;
+	  }
+	  }*/
 	state_pair p;
 	switch(level){
 	case 0:
-	  p.second = pre_mul*g[j][level+1];//only do the raising operator
+	  p.second = pre_mul*g[level+1][s_idx[j]];//only do the raising operator
 	  p.first = conf_i.first;
 	  p.first.increment_mode(j);
 	  p.first.set_spin(~p.first.get_spin());
 	  delta_psi.push_back(p);
 	  break;
 	case max_level:
-	  p.second = pre_mul*g[j][level-1];//only do lowering op
+	  p.second = pre_mul*g[level-1][s_idx[j]];//only do lowering op
 	  p.first = conf_i.first;
 	  p.first.decrement_mode(j);
   	  p.first.set_spin(~p.first.get_spin());
 	  delta_psi.push_back(p);
 	  break;
 	default :
-	  p.second = pre_mul*g[j][level+1];//do both
+	  p.second = pre_mul*g[level+1][s_idx[j]];//do both
 	  p.first = conf_i.first;
 	  p.first.increment_mode(j);
 	  p.first.set_spin(~p.first.get_spin());
 	  delta_psi.push_back(p);
 
 	  state_pair p2;
-	  p2.second = pre_mul*g[j][level];
+	  p2.second = pre_mul*g[level][s_idx[j]];
 	  p2.first = conf_i.first;
 	  p2.first.decrement_mode(j);
 	  p2.first.set_spin(~p2.first.get_spin());
 	  delta_psi.push_back(p);
+	  break;
 	}//end switch
+	j++;
       }//end mode loop
     }//end config loop
   
