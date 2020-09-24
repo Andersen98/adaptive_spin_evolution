@@ -347,7 +347,6 @@ int main(int argc, char * argv[]){
   typedef pair<full_config,complex<double>> state_pair;
   typedef vector<state_pair> state_vec;
   state_vec psi_lbl(1);
-  state_pair p3;
   psi_lbl[0].first.set_spin(true);
   psi_lbl[0].second = 1;
   state_vec psi_amp(psi_lbl);
