@@ -1,5 +1,6 @@
 #include "configuration.hpp"
 #include "input_tools.hpp"
+#include "hamiltonian.hpp"
 #include <vector>
 #include <iostream>
 #include <bitset>
@@ -65,6 +66,10 @@ int main(int argc, char * argv[]){
   double t = params.t0;
   double dt = (params.tf-params.t0)/( double(params.N));
   assert(g[0].size() == num_modes);
+
+ 
+  hamiltonian<vector<double>::iterator,vector<double>::iterator,double,full_config,100,15>
+    h(params.mode_energies.begin(),params.mode_couplings.begin(),3.0);
   while(t < params.tf){
     
     //iterate through each component of state vector

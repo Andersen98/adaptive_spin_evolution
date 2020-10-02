@@ -1,5 +1,18 @@
+#include "configuration.hpp"
+#define #BOOST_TEST_MODULE MyTest
+#include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE( my_test){
+
+  partial_config<bool,100,4,((100*4/64)+1)> c1,c2;
+  BOOST_CHECK_EQUAL(c1,c2);
+  
+
+}
+
+
 //todo, actually make these into a good unit test for the partial_conf class
-  const int num_modes = 300;
+/* const int num_modes = 300;
   const int num_bits = 4;
   const int giant_words = (num_bits*num_modes)/64 +1;
   partial_config<num_modes,num_bits,giant_words> c;
@@ -18,3 +31,4 @@
       assert( c.get_mode(i) == j);
     }
   }
+*/

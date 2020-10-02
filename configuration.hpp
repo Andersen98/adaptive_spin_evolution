@@ -5,7 +5,7 @@
 #include <iostream>
 #include <bitset>
 #include <cassert>
-using namespace std;
+
 
 inline int bit_count (long x)
 {
@@ -34,20 +34,95 @@ inline int bit_count (long x)
   */
 }
 
+//State_Ket is the main interface. Full config and complex are behind the scenes
+template<typename Amplitude, typename Label, auto Abs_Struct,Amplitude one_i>
+class State_Ket{
+    
+  Amplitude amp;
+  Label lbl;
+  
+public:
+  
+  typedef Amplitide amplitude_type;
+  typedef Label lbl_type;
+  using spin_type = typename label::spin_type;
+
+  static Amplitude one_i_val = one_i;
+  static auto abs = Abs_Struct; 
+  
+  void add(full_config &c){
+    amp += amp.amp;
+  }
+  void subtract(full_config &c){
+    amp -= amp.amp;
+  }
+  void negate(){
+    amp = -amp;
+  }
+  //abs struct contains operator() that does abs https://stackoverflow.com/questions/1174169/function-passed-as-template-argument
+  typename Amplitude::value_type abs(Abs_struct abs){
+    return abs(amp);
+  }
+  //multiply by scalar
+  void multiply (Amplitude s){
+    amp *= s;
+  }
+
+  //config label operations
+  spin_type get_spin(){
+    return lbl.get_spin();
+  }
+  void set_spin(spin_type s){
+    lbl.set_spin(s);
+  }
+  bool operator<(const State_Ket &c) const{
+    return(amp < c.amp);
+  }
+  bool this_lbl_less_than(const State_Ket &c) const{
+
+    return (lbl < c.lbl);
+  }
+  //JUST CHECKS TO SEE IF LABELS ARE THE SAME. 
+  bool operator==(const State_Ket &c)const{
+    return( lbl == c.lbl);
+  }
+  void operator=(const State_Ket &c){
+    amp = c.amp;
+    lbl = c.lbl;
+  }
+  void set_mode(int mode,long unsigned level){
+    amp.set_mode(mode,level);
+  }
+  void get_mode(int mode){
+    amp.get_mode(mode);
+  }
+  void increment_mode(int mode){
+    amp.increment_mode( mode);
+  }
+  void decrement_mode(int mode){
+    amp.decrement_mode(mode);
+  }
+  
+};
+
+
+using namespace std;
 template<typename spin_type, const int num_modes,const int num_bits,int giant_count>
 class partial_config{
   //represents the mode configuration for a spin value in
   // a spin system coupled to resivoir. 
   //zero indexing for modes ex; 0,1,2,3...
   //friend std::ostream  &operator<<(std::ostream &os, const partial_config &c); 
-  
+
   long unsigned rep[giant_count] = {0}; //represented in long ints
   static vector<long unsigned> mode_masks;
   static const long unsigned one = 1;
   static const long unsigned zero = 0;
   spin_type spin;
 public:
-  
+
+  static typename spin_type;
+
   partial_config(){}
   spin_type get_spin()const{
     return spin;
