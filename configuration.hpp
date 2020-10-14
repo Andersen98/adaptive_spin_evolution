@@ -34,83 +34,80 @@ inline int bit_count (long x)
   */
 }
 
+//
+
+
+
 //State_Ket is the main interface. Full config and complex are behind the scenes
-template<typename Amplitude, typename Label, auto Abs_Struct,Amplitude one_i>
+template<typename Spin_Type,typename Amplitude, typename value_type,
+	 typename Label, value_type(*Abs_Ptr)(const Amplitude &) >
 class State_Ket{
-    
-  Amplitude amp;
-  Label lbl;
   
 public:
   
-  typedef Amplitide amplitude_type;
+  typedef Amplitude amplitude_type;
   typedef Label lbl_type;
-  using spin_type = typename label::spin_type;
+  typedef Spin_Type spin_type;
 
-  static Amplitude one_i_val = one_i;
-  static auto abs = Abs_Struct; 
+  Spin_Type spin;
+  Amplitude amp;
+  Label lbl;
   
-  void add(full_config &c){
-    amp += amp.amp;
+  //abs struct contains operator() that does abs https://stackoverflow.com/questions/1174169/function-passed-as-template-argument
+  constexpr static value_type(*abs_ptr)(const Amplitude&) = Abs_Ptr;
+  constexpr static int num_modes = Label::num_modes_int;
+  constexpr static int max_level = Label::max_level_int;
+    
+  void add(State_Ket &c){
+    amp += c.amp;
   }
-  void subtract(full_config &c){
-    amp -= amp.amp;
+  void subtract(State_Ket &c){
+    amp -= c.amp;
   }
   void negate(){
     amp = -amp;
   }
-  //abs struct contains operator() that does abs https://stackoverflow.com/questions/1174169/function-passed-as-template-argument
-  typename Amplitude::value_type abs(Abs_struct abs){
-    return abs(amp);
-  }
+  
   //multiply by scalar
   void multiply (Amplitude s){
     amp *= s;
   }
-
-  //config label operations
-  spin_type get_spin(){
-    return lbl.get_spin();
+  
+  //conpare label + spin
+  bool operator <(const State_Ket &c) const{
+    return ((lbl < c.lbl )&&(spin < c.spin));
   }
-  void set_spin(spin_type s){
-    lbl.set_spin(s);
-  }
-  bool operator<(const State_Ket &c) const{
-    return(amp < c.amp);
-  }
-  bool this_lbl_less_than(const State_Ket &c) const{
-
-    return (lbl < c.lbl);
-  }
+  
   //JUST CHECKS TO SEE IF LABELS ARE THE SAME. 
   bool operator==(const State_Ket &c)const{
-    return( lbl == c.lbl);
+    return( (spin== c.spin)&& (lbl == c.lbl));
   }
   void operator=(const State_Ket &c){
     amp = c.amp;
     lbl = c.lbl;
+    spin = c.spin;
   }
   void set_mode(int mode,long unsigned level){
-    amp.set_mode(mode,level);
+    lbl.set_mode(mode,level);
   }
-  void get_mode(int mode){
-    amp.get_mode(mode);
+  int get_mode(int mode){
+    return lbl.get_mode(mode);
   }
   void increment_mode(int mode){
-    amp.increment_mode( mode);
+    lbl.increment_mode( mode);
   }
   void decrement_mode(int mode){
-    amp.decrement_mode(mode);
+    lbl.decrement_mode(mode);
   }
+
   
 };
 
 
 using namespace std;
-template<typename spin_type, const int num_modes,const int num_bits,int giant_count>
+template<const int num_modes,const int num_bits,int giant_count>
 class partial_config{
-  //represents the mode configuration for a spin value in
-  // a spin system coupled to resivoir. 
+
   //zero indexing for modes ex; 0,1,2,3...
   //friend std::ostream  &operator<<(std::ostream &os, const partial_config &c); 
 
@@ -118,18 +115,17 @@ class partial_config{
   static vector<long unsigned> mode_masks;
   static const long unsigned one = 1;
   static const long unsigned zero = 0;
-  spin_type spin;
+  
 public:
 
-  static typename spin_type;
+  constexpr static int max_level_int = (2<<num_bits -1);
+  constexpr static int num_modes_int = num_modes;
+  constexpr static int num_bits_int = num_bits;
+  constexpr static int giant_count_int = giant_count;
+  
+  
 
   partial_config(){}
-  spin_type get_spin()const{
-    return spin;
-  }
-  void set_spin(spin_type s){
-    spin = s;
-  }
   
   bool operator<(const partial_config &d) const{
     //copied from Dice Determinat.h
@@ -149,7 +145,7 @@ public:
 
   void operator=(const partial_config &c) {
     copy(begin(c.rep),end(c.rep),begin(rep));
-    spin = c.spin;
+    
   }
 
   
@@ -249,7 +245,7 @@ vector<long unsigned> get_mask(){
   }
   return mask;
 }
-template<typename spin, int modes,int bits, int giant>
-vector<long unsigned> partial_config<spin,modes,bits,giant>::mode_masks = get_mask<bits>();//variable resolution VERY strange
+template< int modes,int bits, int giant>
+vector<long unsigned> partial_config<modes,bits,giant>::mode_masks = get_mask<bits>();//variable resolution VERY strange
 
 #endif //ADAPTIVE_SPIN_CONFIGURATION
