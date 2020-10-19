@@ -1,11 +1,12 @@
 #ifndef ADAPTIVE_SPIN_CONFIGURATION
 #define ADAPTIVE_SPIN_CONFIGURATION 1
 
+#include <complex>
 #include <vector>
 #include <iostream>
 #include <bitset>
 #include <cassert>
-
+#include <iostream>
 
 inline int bit_count (long x)
 {
@@ -39,10 +40,10 @@ inline int bit_count (long x)
 
 
 //State_Ket is the main interface. Full config and complex are behind the scenes
-template<typename Spin_Type,typename Amplitude, typename value_type,
-	 typename Label, value_type(*Abs_Ptr)(const Amplitude &) >
+template<typename Spin_Type,typename Amplitude, typename value_type, typename Label >
 class State_Ket{
-  
+  template<typename sp,typename ap, typename vt, typename lb>
+  friend std::ostream& operator<<( std::ostream&, const State_Ket<sp,ap,vt,lb>& p );
 public:
   
   typedef Amplitude amplitude_type;
@@ -54,7 +55,6 @@ public:
   Label lbl;
   
   //abs struct contains operator() that does abs https://stackoverflow.com/questions/1174169/function-passed-as-template-argument
-  constexpr static value_type(*abs_ptr)(const Amplitude&) = Abs_Ptr;
   constexpr static int num_modes = Label::num_modes_int;
   constexpr static int max_level = Label::max_level_int;
     
@@ -107,7 +107,8 @@ public:
 using namespace std;
 template<const int num_modes,const int num_bits,int giant_count>
 class partial_config{
-
+  template<int umode,int ubits,int ugiant>
+  friend std::ostream& operator<<( std::ostream&, const partial_config<umode,ubits,ugiant>& p );
   //zero indexing for modes ex; 0,1,2,3...
   //friend std::ostream  &operator<<(std::ostream &os, const partial_config &c); 
 
@@ -248,4 +249,25 @@ vector<long unsigned> get_mask(){
 template< int modes,int bits, int giant>
 vector<long unsigned> partial_config<modes,bits,giant>::mode_masks = get_mask<bits>();//variable resolution VERY strange
 
+template <int modes,int bits,int giant>
+std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits, giant>& p ) {
+
+  for(int i = 0; i<giant; i++){
+    o <<"Modes: " << (i+1)*64-1 << " - " << i*64  <<" ("
+      << bitset<64>(p.rep[i]) << " )" << std::endl ;
+  }
+  return o;
+  
+}
+
+
+template<typename sp,typename ap, typename vt,typename lb>
+std::ostream& operator<<( std::ostream& o, const State_Ket<sp,ap,vt,lb>& p ){
+
+  o << "Amplitude : " << p.amp << std::endl;
+  o << "Spin(T/F): " <<  p.spin << std::endl;
+  o << p.lbl;
+  return o;
+
+}
 #endif //ADAPTIVE_SPIN_CONFIGURATION

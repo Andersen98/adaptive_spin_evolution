@@ -13,7 +13,7 @@
 #include "configuration.hpp"
 #include "input_tools.hpp"
 #include "hamiltonian.hpp"
-
+#include "spin_density_matrix.hpp"
 
 using namespace std;
 
@@ -24,27 +24,6 @@ struct Spin_Params{
   
 };
 
-
-template<typename State_Vector,int time_steps>
-class Population_Callback{
-
-public:
-  double time[time_steps] = {};
-  double spin_up[time_steps] = {};
-  double spin_down[time_steps] = {};
-  
-  
-  void operator()(const State_Vector &psi, double time, int step_count){
-    for(auto &c:psi){
-      if(c.spin){
-	spin_up[step_count] += real(abs(c.amp)*conj(c.amp));
-      }else{
-	spin_down[step_count] += real(abs(c.amp)*conj(c.amp));
-      }
-    }
-  }
-
-};
 
 int main(int argc, char * argv[]){
   
@@ -83,6 +62,8 @@ int main(int argc, char * argv[]){
 
   const int time_steps = 20;
   const double final_time = 2.0;
+  const double energy_cutoff = 20;
+  const double dt = time_steps/final_time;
   const int num_spins = 2;
   const int num_modes = 100;
   const int num_bits = 4;
@@ -94,32 +75,38 @@ int main(int argc, char * argv[]){
 
   //Complex Number Tools
   //also typedefs
-  constexpr double (&abs_ptr)(const std::complex<double>&) = abs;  
   typedef complex<double> Amplitude;
   typedef bool spin_type;
   typedef partial_config< num_modes, num_bits, giant_words> Label;
-  typedef State_Ket<spin_type,Amplitude, double, Label, abs_ptr > State_Ket;
+  typedef State_Ket<spin_type,Amplitude, double, Label> State_Ket;
   typedef vector<State_Ket> State_Vector;
   typedef vector<double>::iterator Iter_m; //mode iterator
   typedef vector<double>::iterator Iter_c; //coupling iterator
   //setup initial conditions
-  State_Vector initial_state(1);
-  initial_state[1].spin = true;
-  initial_state[1].amp = 1;
-  initial_state[1].lbl.set_mode(0,3);
-
+  vector<Label> labelVec = vector<Label>(3);
+  labelVec[0].set_mode(2,2);
+  cout << labelVec[0].get_mode(0);
+  State_Ket initial_config;
+  initial_config.spin = true;
+  State_Vector initial_state;
+  initial_state.push_back(initial_config);
+  initial_state[0].spin = true;
+  initial_state[0].amp = 1;
+  initial_state[0].lbl.set_mode(0,3);
+  cout<<"hello"<<std::endl;
   //make callback to calculate the population
-  typedef Population_Callback<State_Vector, time_steps> PC;
-  PC callback;
+  typedef Spin_Density_Matrix_Evolution<time_steps> PC;
+  PC matrix_recorder(dt);
   //make hamiltonian
-  hamiltonian<Iter_m,Iter_c,Spin_Params, State_Vector, PC>
+  hamiltonian<Iter_m,Iter_c,Spin_Params, State_Vector>
     h(params.mode_energies.begin(),params.mode_couplings.begin(),spin_params,
-      initial_state,params.energy_cutoff);
+      initial_state,energy_cutoff);
 
-  
-  for(int i = 0; i <time_steps; i++){
-    h.do_run( final_time/(time_steps) , callback );
+
+ 
+  for(int i = 0; i <5; i++){
+    h.do_run(dt,matrix_recorder,PC::value_tag );
   }
-
+  cout << matrix_recorder;
   return 0;
 }
