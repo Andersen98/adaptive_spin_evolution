@@ -7,7 +7,7 @@
 #include <bitset>
 #include <cassert>
 #include <iostream>
-
+#include <array>
 inline int bit_count (long x)
 {
   x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
@@ -39,100 +39,42 @@ inline int bit_count (long x)
 
 
 
-//State_Ket is the main interface. Full config and complex are behind the scenes
-template<typename Spin_Type,typename Amplitude, typename value_type, typename Label >
-class State_Ket{
-  template<typename sp,typename ap, typename vt, typename lb>
-  friend std::ostream& operator<<( std::ostream&, const State_Ket<sp,ap,vt,lb>& p );
-public:
-  
-  typedef Amplitude amplitude_type;
-  typedef Label lbl_type;
-  typedef Spin_Type spin_type;
-
-  Spin_Type spin;
-  Amplitude amp;
-  Label lbl;
-  
-  //abs struct contains operator() that does abs https://stackoverflow.com/questions/1174169/function-passed-as-template-argument
-  constexpr static int num_modes = Label::num_modes_int;
-  constexpr static int max_level = Label::max_level_int;
-    
-  void add(State_Ket &c){
-    amp += c.amp;
-  }
-  void subtract(State_Ket &c){
-    amp -= c.amp;
-  }
-  void negate(){
-    amp = -amp;
-  }
-  
-  //multiply by scalar
-  void multiply (Amplitude s){
-    amp *= s;
-  }
-  
-  //conpare label + spin
-  bool operator <(const State_Ket &c) const{
-    return ((lbl < c.lbl )&&(spin < c.spin));
-  }
-  
-  //JUST CHECKS TO SEE IF LABELS ARE THE SAME. 
-  bool operator==(const State_Ket &c)const{
-    return( (spin== c.spin)&& (lbl == c.lbl));
-  }
-  void operator=(const State_Ket &c){
-    amp = c.amp;
-    lbl = c.lbl;
-    spin = c.spin;
-  }
-  void set_mode(int mode,long unsigned level){
-    lbl.set_mode(mode,level);
-  }
-  int get_mode(int mode){
-    return lbl.get_mode(mode);
-  }
-  void increment_mode(int mode){
-    lbl.increment_mode( mode);
-  }
-  void decrement_mode(int mode){
-    lbl.decrement_mode(mode);
-  }
-
-  
-};
-
-
 using namespace std;
-template<const int num_modes,const int num_bits,int giant_count>
+template<const int num_modes,const int num_bits>
 class partial_config{
-  template<int umode,int ubits,int ugiant>
-  friend std::ostream& operator<<( std::ostream&, const partial_config<umode,ubits,ugiant>& p );
+  template<int umode,int ubits>
+  friend std::ostream& operator<<( std::ostream&, const partial_config<umode,ubits>& p );
   //zero indexing for modes ex; 0,1,2,3...
   //friend std::ostream  &operator<<(std::ostream &os, const partial_config &c); 
 
-  long unsigned rep[giant_count] = {0}; //represented in long ints
+  std::array<long unsigned, (num_modes*num_bits/64) +1> rep; //represented in long ints
   static vector<long unsigned> mode_masks;
   static const long unsigned one = 1;
   static const long unsigned zero = 0;
   
 public:
 
+  partial_config():rep{0}{}
+  partial_config(const partial_config& c):rep{0}{
+    std::copy(std::begin(c.rep),std::end(c.rep),std::begin(rep));
+  }
+  
   constexpr static int max_level_int = (2<<num_bits -1);
   constexpr static int num_modes_int = num_modes;
   constexpr static int num_bits_int = num_bits;
-  constexpr static int giant_count_int = giant_count;
+  constexpr static int giant_count = (num_modes*num_bits/64) +1;
   
   
 
-  partial_config(){}
+ 
   
   bool operator<(const partial_config &d) const{
     //copied from Dice Determinat.h
     for (int i=giant_count -1; i >=0; i--){
-      if(rep[i] < d.rep[i]) return true;
-      else if (rep[i] > d.rep[i]) return false;
+      if(rep[i] > d.rep[i] /*int compare is swapped from mode compare */) {
+	return true;
+      }
+      else if (rep[i] < d.rep[i]) return false;
     }
     return false;
   }
@@ -246,13 +188,13 @@ vector<long unsigned> get_mask(){
   }
   return mask;
 }
-template< int modes,int bits, int giant>
-vector<long unsigned> partial_config<modes,bits,giant>::mode_masks = get_mask<bits>();//variable resolution VERY strange
+template< int modes,int bits>
+vector<long unsigned> partial_config<modes,bits>::mode_masks = get_mask<bits>();//variable resolution VERY strange
 
-template <int modes,int bits,int giant>
-std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits, giant>& p ) {
+template <int modes,int bits>
+std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p ) {
 
-  for(int i = 0; i<giant; i++){
+  for(int i = 0; i<partial_config<modes,bits>::giant_count; i++){
     o <<"Modes: " << (i+1)*64-1 << " - " << i*64  <<" ("
       << bitset<64>(p.rep[i]) << " )" << std::endl ;
   }
@@ -261,8 +203,80 @@ std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits, gia
 }
 
 
-template<typename sp,typename ap, typename vt,typename lb>
-std::ostream& operator<<( std::ostream& o, const State_Ket<sp,ap,vt,lb>& p ){
+
+
+
+
+
+//State_Ket is the main interface. Full config and complex are behind the scenes
+template<typename Spin_Type,typename Amplitude, int num_modes, int num_bits >
+class State_Ket{
+  template<typename sp,typename ap, int num_modes_, int num_bits_>
+  friend std::ostream& operator<<( std::ostream&, const State_Ket<sp,ap,num_modes_,num_bits>& p );
+public:
+
+  State_Ket():spin(false),amp(0){}
+  //copy constructor
+  State_Ket(const State_Ket&c ):spin(c.spin),amp(c.amp),lbl(c.lbl){}
+  
+  typedef Amplitude amplitude_type;
+  typedef partial_config<num_modes,num_bits> Label;
+  typedef Spin_Type spin_type;
+
+  Spin_Type spin;
+  Amplitude amp;
+  Label lbl;
+  
+  constexpr static int  num_modes_int = num_modes;
+  constexpr static int max_level_int = 1<<num_bits -1;
+    
+  void add(State_Ket &c){
+    amp += c.amp;
+  }
+  void subtract(State_Ket &c){
+    amp -= c.amp;
+  }
+  void negate(){
+    amp = -amp;
+  }
+  
+  //multiply by scalar
+  void multiply (Amplitude s){
+    amp *= s;
+  }
+  
+  //conpare label + spin
+  bool operator <(const State_Ket &c) const{
+    return ((lbl < c.lbl )&&(spin < c.spin));
+  }
+  
+  //JUST CHECKS TO SEE IF LABELS ARE THE SAME. 
+  bool operator==(const State_Ket &c)const{
+    return( (spin== c.spin)&& (lbl == c.lbl));
+  }
+  void operator=(const State_Ket &c){
+    amp = c.amp;
+    lbl = c.lbl;
+    spin = c.spin;
+  }
+  void set_mode(int mode,long unsigned level){
+    lbl.set_mode(mode,level);
+  }
+  int get_mode(int mode){
+    return lbl.get_mode(mode);
+  }
+  void increment_mode(int mode){
+    lbl.increment_mode( mode);
+  }
+  void decrement_mode(int mode){
+    lbl.decrement_mode(mode);
+  }
+
+  
+};
+
+template<typename sp,typename ap, int nm, int nb>
+std::ostream& operator<<( std::ostream& o, const State_Ket<sp,ap,nm,nb>& p ){
 
   o << "Amplitude : " << p.amp << std::endl;
   o << "Spin(T/F): " <<  p.spin << std::endl;
@@ -270,4 +284,9 @@ std::ostream& operator<<( std::ostream& o, const State_Ket<sp,ap,vt,lb>& p ){
   return o;
 
 }
+
+
+
+
+
 #endif //ADAPTIVE_SPIN_CONFIGURATION

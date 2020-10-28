@@ -10,7 +10,7 @@ using namespace std;
 //if exit status is false, continue with the calculation
 bool get_params(param_vals &conf, int argc, char * argv[]){
   
-  
+
     po::options_description generic("Generic options");
     generic.add_options()
       ("help", "produce help message")
@@ -56,7 +56,8 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       store(po::parse_config_file(ifs_param_file, config_file_options),vm);
       notify(vm);
     }
-
+    ifs_param_file.close();
+      
     if(vm.count("print_inputs")){
       cout <<  "cutoff: " << conf.energy_cutoff << endl;
       cout <<  "max_occupation: " << conf.max_occupation << endl;
@@ -74,23 +75,25 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       
     if(!ifs){
       cout<< "Cannot open: " << conf.atom_path << endl;
+      return false;
     }else{
       for(double i; ifs >> i;)
 	conf.atom_levels.push_back(i); 
-      ifs.close();
     }
+    ifs.close();
 
     ifstream ifs_mode(conf.mode_path.c_str());
     if(!ifs_mode){
       cout<< "Cannot open: " << conf.mode_path << endl;
+      return false;
     }else{
       for(double i; ifs_mode >> i;){
 	conf.mode_energies.push_back(i);
 	ifs_mode >> i;
 	conf.mode_couplings.push_back(i);
       }
-      ifs.close();
     }  
-
+    ifs_mode.close();
+    
     return false; //exit status is false (meaning we should proceed
 }

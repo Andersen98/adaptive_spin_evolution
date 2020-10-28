@@ -18,11 +18,6 @@
 using namespace std;
 
 
-struct Spin_Params{
-
-  double energy;
-  
-};
 
 
 int main(int argc, char * argv[]){
@@ -40,36 +35,18 @@ int main(int argc, char * argv[]){
     cout << e.what() << endl;
     return 1;
   }
-    params.energy_cutoff;
-
-  //make transitions
-  vector<int> s_idx(params.mode_energies.size());
-  iota(s_idx.begin(),s_idx.end(),0);
-
-  sort(s_idx.begin(),s_idx.end(),
-       [&x=params.mode_couplings](auto i1,auto i2){ return x[i1] > x[i2];});
-
-  //make full transition list 
-  vector<vector<double>> g(params.max_occupation);
-  transform(g.begin(),g.end(),g.begin(),
-	    [&m=params.mode_couplings, j=1](vector<double> el) mutable {
-	      vector<double> v(m);
-	      transform(v.begin(),v.end(),v.begin(), [&j](double g){return sqrt(j)*g;});
-	      j++;
-	      return v;
-	    });
     
 
-  const int time_steps = 20;
-  const double final_time = 2.0;
-  const double energy_cutoff = 20;
-  const double dt = time_steps/final_time;
+  const int time_steps = 2000;
+  const double final_time = .0002;
+  const double energy_cutoff = .0002;
+  const double dt = final_time/time_steps;
   const int num_spins = 2;
-  const int num_modes = 100;
-  const int num_bits = 4;
+  const int num_modes = 1;
+  const int num_bits = 8;
   const int max_level = (1<<num_bits) -1;
-  const int giant_words = (num_bits*num_modes)/64 +1;
-  assert(g[0].size() == num_modes);
+
+ 
   Spin_Params spin_params;
   spin_params.energy = 1;
 
@@ -77,36 +54,32 @@ int main(int argc, char * argv[]){
   //also typedefs
   typedef complex<double> Amplitude;
   typedef bool spin_type;
-  typedef partial_config< num_modes, num_bits, giant_words> Label;
-  typedef State_Ket<spin_type,Amplitude, double, Label> State_Ket;
+  typedef State_Ket<spin_type,Amplitude, num_modes,num_bits> State_Ket;
   typedef vector<State_Ket> State_Vector;
   typedef vector<double>::iterator Iter_m; //mode iterator
   typedef vector<double>::iterator Iter_c; //coupling iterator
   //setup initial conditions
-  vector<Label> labelVec = vector<Label>(3);
-  labelVec[0].set_mode(2,2);
-  cout << labelVec[0].get_mode(0);
-  State_Ket initial_config;
-  initial_config.spin = true;
-  State_Vector initial_state;
-  initial_state.push_back(initial_config);
-  initial_state[0].spin = true;
+  State_Vector initial_state(1);
   initial_state[0].amp = 1;
-  initial_state[0].lbl.set_mode(0,3);
-  cout<<"hello"<<std::endl;
   //make callback to calculate the population
   typedef Spin_Density_Matrix_Evolution<time_steps> PC;
   PC matrix_recorder(dt);
   //make hamiltonian
-  hamiltonian<Iter_m,Iter_c,Spin_Params, State_Vector>
-    h(params.mode_energies.begin(),params.mode_couplings.begin(),spin_params,
+  hamiltonian<Iter_m,Iter_c,Spin_Params, State_Vector> h;
+  
+  h.setup(params.mode_energies.begin(),params.mode_couplings.begin(),spin_params,
       initial_state,energy_cutoff);
 
 
  
-  for(int i = 0; i <5; i++){
-    h.do_run(dt,matrix_recorder,PC::value_tag );
+  for(int i = 0; i <time_steps; i++){
+    h.simple_run(dt);
+    State_Vector v = h.get_psi_lbl();
+    matrix_recorder(v.begin(),v.end(),std::iterator_traits<State_Vector::iterator>::iterator_category());
+    
+    
   }
-  cout << matrix_recorder;
+  cout << matrix_recorder <<endl;
+  cout << h.level_cap;
   return 0;
 }

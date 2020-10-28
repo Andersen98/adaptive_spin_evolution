@@ -3,15 +3,16 @@
 #include <iterator>
 #include <algorithm>
 #include <iostream>
-
+#include <array>
+#include <complex>
 template<int time_steps>
 class Spin_Density_Matrix_Evolution{
 
   template<int tSteps>
   friend std::ostream& operator<<( std::ostream& o, const Spin_Density_Matrix_Evolution<tSteps>& p );
-  double spin_up[time_steps] = {};
-  double spin_down[time_steps] = {};
-  int count = 0;
+  std::array<double, time_steps> spin_up = {};
+  std::array<double, time_steps> spin_down = {};
+  int time_step = 0;
   double dt;
   
 
@@ -22,19 +23,19 @@ public:
   Spin_Density_Matrix_Evolution(double dt_): dt(dt_){} 
 
   template <typename State_Iterator>
-  void record_state(State_Iterator begin, State_Iterator end,
+  void operator ()(State_Iterator begin, State_Iterator end,
 		    std::random_access_iterator_tag){
     
     while(begin !=end){
       if(begin->spin){
-	spin_up[count]++;
+	spin_up[time_step] +=std::abs(begin->amp )*std::abs(begin->amp );
       }else{
-	spin_down[count]++;
+	spin_down[time_step]+= std::abs(begin->amp )*std::abs(begin->amp );
       }
 
       begin++;
     }
-    count++;
+    time_step++;
   }
 
 };

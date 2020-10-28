@@ -27,4 +27,10 @@ struct param_vals{
 
 bool get_params(param_vals &params,int argc, char * argv[]);
 
+struct Spin_Params{
+
+  double energy;
+  
+};
+
 #endif //ADAPTIVE_INPUT_PARAMETERS 
