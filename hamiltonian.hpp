@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <complex>
+#include <array>
 //You need to supply your own state ket and mode and coupling iterators
 //State Ket can be an std::vector
 template<typename Iter_m, typename Iter_c, typename Spin_params_T,
@@ -24,7 +25,8 @@ class hamiltonian{
   mode_val_T m_g[State_Ket::num_modes_int]; //soted by g
   //sorting modes by dec energy
   mode_val_T m_energy[State_Ket::num_modes_int];
-
+  std::array<int, State_Ket::num_modes_int> energy_to_mode_idx;
+  
   Amplitude one_i = Amplitude(0,1);
 
   Spin_params_T spin_params;
@@ -36,7 +38,7 @@ class hamiltonian{
 public:
   int level_cap = 0;
 
-  hamiltonian():g{{}},m_g{},m_energy{}{}
+  hamiltonian():g{{}},m_g{},m_energy{},energy_to_mode_idx{}{}
   
   void setup(Iter_m m_begin,Iter_c c_begin, Spin_params_T spin_params_,
 	      State_Vector initial_state, value_type cutoff){
@@ -54,12 +56,12 @@ public:
     int idx[num_modes] = {};
     mode_val_T m_copy[num_modes] = {};
     g_val_T g_copy[num_modes] = {};
-    transform(begin(idx),end(idx),begin(idx),[j=0](auto &el)mutable{return j++;});
+    std::transform(begin(idx),end(idx),begin(idx),[j=0](auto &el)mutable{return j++;});
     std::copy(m_begin,m_begin+num_modes,begin(m_energy));
     std::copy(m_begin,m_begin+num_modes,begin(m_copy));
     std::copy(c_begin,c_begin+num_modes,begin(g_copy));
     std::sort(begin(m_energy), end(m_energy),[](auto &it1,auto &it2){return it1>it2;});
-    std::sort(begin(idx),end(idx), [&g=g_copy](auto &it1,auto &it2){return g[it1] > g[it2];});
+    std::sort(begin(idx),end(idx), [&g_copy](auto &it1,auto &it2){return g_copy[it1] > g_copy[it2];});
 
     
     
@@ -68,8 +70,11 @@ public:
       for(int n = 0; n < max_level; n++)
 	g[n][i] = sqrt(n)*g_copy[idx[i]];
     }
-
-    
+    //idx_base = 0,1,2,3,4...n_modes represents default g ordering
+    int idx_base[num_modes] = {};
+    std::transform(begin(idx_base),end(idx_base),begin(idx_base),[j=0](auto &el)mutable{return j++;});
+    std::sort(begin(idx_base),end(idx_base), [&](auto &it1, auto&it2) {return m_g[it1] > m_g[it2] ;});
+    std::copy(begin(idx_base),end(idx_base), begin(energy_to_mode_idx));
   }
 
 
@@ -104,20 +109,83 @@ public:
   }
     
 
+  bool h_field(State_Vector delta, State_Ket ket, value_type cutoff, value_type dt){
+
+    bool result = false;
+    
+    value_type prefactor = dt * std::real(std::conj(ket.amp)*ket.amp);
+
+    if( prefactor * max_level*m_energy[num_modes-1]* prefactor < cutoff){
+      result = true;
+    }
+    
+    for(int i = 0; (max_level*m_energy[i]* prefactor > cutoff)&&(i < State_Ket::num_modes_int); i++){
+      int mode_idx = energy_to_mode_idx[i];
+      int level = ket.get_mode(mode_idx);
+      if( level > 0){
+	value_type energy = m_energy[i]*level;
+	State_Ket c = ket;
+	c.amp += -dt*one_i*energy;
+	delta.push_back(c);
+      }
+    }
+
+
+    return result;
+
+  }
+
+  bool h_atom(State_Vector delta, State_Ket ket, value_type cutoff, value_type dt){
+    bool result = false;
+
+    
+    value_type prefactor = .5*spin_params.energy* dt * std::real(std::conj(ket.amp)*ket.amp);
+    
+    if (prefactor  < cutoff){
+      result = true;
+    }else if(ket.spin){
+
+      State_Ket c = ket;
+      c.amp *= - one_i* dt * .5*spin_params.energy;
+      delta.push_back(c);
+    }else if(!ket.spin){
+      State_Ket c = ket;
+      c.amp *= one_i * dt * .5 * spin_params.energy;
+      delta.push_back(c);
+    }
+      
+    return result;
+  }
+
   void simple_run(value_type dt){
 
     psi_delta.clear();
+    psi_delta.reserve(3*psi_amp.size() );
+        
     bool stop = false;
     for(auto& ket:psi_amp){
       stop = h_dipole(psi_delta,ket,energy_cutoff,dt);
       if(stop)
 	break;
     }
+    stop = false;
+    for(auto& ket:psi_amp){
+      stop = h_field(psi_delta, ket, energy_cutoff,dt);
+      if (stop)
+	break;
+    }
+    stop = false;
+    for(auto& ket:psi_amp){
+      stop = h_atom(psi_delta, ket, energy_cutoff, dt);
+	if (stop)
+	  break;
+    }
+    
     sort_and_merge_by_label(psi_delta,psi_lbl);
     normalize_state(psi_lbl);
     psi_amp.resize(psi_lbl.size());
-    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-    sort(psi_amp.begin(),psi_amp.end(),
+    std::copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+    std::sort(psi_amp.begin(),psi_amp.end(),
 	 [this](auto&it1,auto&it2){return std::abs(it1.amp) > std::abs(it2.amp);});
 
   }

@@ -37,18 +37,20 @@ int main(int argc, char * argv[]){
   }
     
 
-  const int time_steps = 2000;
-  const double final_time = .0002;
-  const double energy_cutoff = .0002;
-  const double dt = final_time/time_steps;
+  
+  const double final_time = 200;
+  const double high_freq = 20*1.81;
+  const double dt = 1/high_freq;
+  const int time_steps = 10;
+  const double energy_cutoff = .00000001;
   const int num_spins = 2;
-  const int num_modes = 1;
+  const int num_modes = 1000;
   const int num_bits = 8;
   const int max_level = (1<<num_bits) -1;
 
  
   Spin_Params spin_params;
-  spin_params.energy = 1;
+  spin_params.energy = params.atom_levels[1];
 
   //Complex Number Tools
   //also typedefs
@@ -61,6 +63,7 @@ int main(int argc, char * argv[]){
   //setup initial conditions
   State_Vector initial_state(1);
   initial_state[0].amp = 1;
+  initial_state[0].spin = true;
   //make callback to calculate the population
   typedef Spin_Density_Matrix_Evolution<time_steps> PC;
   PC matrix_recorder(dt);

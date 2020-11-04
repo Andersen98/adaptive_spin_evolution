@@ -210,3 +210,73 @@ BOOST_DATA_TEST_CASE_F(FSMALL, single_run,
     
 }
 		       
+
+
+struct FBIG {
+public:
+  
+  const int num_modes=100;
+  const int bits = 4;
+  typedef  vector<double>::iterator vIt;
+  typedef State_Ket<bool,complex<double>,2,4> State_Ket_T;
+  typedef vector<State_Ket_T> State_Vector_T;
+  typedef hamiltonian <vIt,vIt,Spin_Params, State_Vector_T> hamiltonian_T;
+
+  param_vals params;
+  State_Vector_T delta;
+  State_Ket_T ket;
+  hamiltonian_T h;
+  
+  FBIG(){
+    BOOST_TEST_MESSAGE( "setup fixture" );
+    //read in params
+    int argc = 1;
+    char argv[] = {'p','r','\0'};
+    char * argptr[] = {argv};
+    bool exit =  get_params(params,argc, argptr);
+    BOOST_TEST_REQUIRE(!exit);
+    
+    Spin_Params spin_params;
+    spin_params.energy = params.atom_levels[1];
+
+    double energy_cutoff = .00000000001;
+
+    State_Vector_T initial_state(1);
+    initial_state[0].amp=1;
+
+    h.setup(params.mode_energies.begin(),params.mode_couplings.begin(),
+		    spin_params,initial_state,energy_cutoff);
+
+        
+    h.h_dipole(delta,ket,-1,1);
+    h.simple_run(1/20);
+    
+
+  }
+	
+  ~FBIG()
+  { BOOST_TEST_MESSAGE( "teardown fixture" ); }
+  void setup(){ 
+    
+  }
+  void teardown(){
+  
+  }
+
+  
+  
+};
+
+
+BOOST_TEST_DECORATOR(*utf::tolerance(0.00001) *utf::label("leakage"))
+BOOST_DATA_TEST_CASE_F(FBIG, single_run_big,
+		       data::xrange(3),
+		       idx)
+{
+
+  State_Vector_T v = h.get_psi_lbl();
+  BOOST_TEST_MESSAGE(v[0]);
+  BOOST_REQUIRE(v.size() > 1);
+    
+}
+

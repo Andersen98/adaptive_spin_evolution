@@ -77,8 +77,10 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       cout<< "Cannot open: " << conf.atom_path << endl;
       return false;
     }else{
-      for(double i; ifs >> i;)
-	conf.atom_levels.push_back(i); 
+      for(double i; ifs >> i;){
+	conf.atom_levels.push_back(i);
+	//cout << conf.atom_levels.back();
+      }
     }
     ifs.close();
 
@@ -91,6 +93,9 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
 	conf.mode_energies.push_back(i);
 	ifs_mode >> i;
 	conf.mode_couplings.push_back(i);
+
+	//cout << "mode " << conf.mode_energies.back();
+	//cout << "\t coupling " << conf.mode_couplings.back() <<endl;
       }
     }  
     ifs_mode.close();
