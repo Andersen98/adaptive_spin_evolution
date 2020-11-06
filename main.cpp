@@ -38,11 +38,12 @@ int main(int argc, char * argv[]){
     
 
   
-  const double final_time = 200;
-  const double high_freq = 20*1.81;
+  const double final_time = 5;
+  //const double high_freq = 60*1.81;
+  const double high_freq = params.largest_frequency;
   const double dt = 1/high_freq;
-  const int time_steps = 10;
-  const double energy_cutoff = .00000001;
+  const int time_steps = final_time/dt;
+  const double energy_cutoff = 0;
   const int num_spins = 2;
   const int num_modes = 1000;
   const int num_bits = 8;
@@ -65,8 +66,8 @@ int main(int argc, char * argv[]){
   initial_state[0].amp = 1;
   initial_state[0].spin = true;
   //make callback to calculate the population
-  typedef Spin_Density_Matrix_Evolution<time_steps> PC;
-  PC matrix_recorder(dt);
+  typedef Spin_Density_Matrix_Evolution<double> PC;
+  PC matrix_recorder(dt,time_steps);
   //make hamiltonian
   hamiltonian<Iter_m,Iter_c,Spin_Params, State_Vector> h;
   
@@ -83,6 +84,5 @@ int main(int argc, char * argv[]){
     
   }
   cout << matrix_recorder <<endl;
-  cout << h.level_cap;
   return 0;
 }

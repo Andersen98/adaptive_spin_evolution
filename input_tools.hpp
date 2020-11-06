@@ -18,6 +18,7 @@ struct param_vals{
   //time related values
   double t0;
   double tf;
+  double largest_frequency;
   int N;
   //file read in
   std::vector<double> atom_levels;

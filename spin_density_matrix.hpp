@@ -5,14 +5,16 @@
 #include <iostream>
 #include <array>
 #include <complex>
-template<int time_steps>
+#include <vector>
+template<typename value_type>
 class Spin_Density_Matrix_Evolution{
 
-  template<int tSteps>
-  friend std::ostream& operator<<( std::ostream& o, const Spin_Density_Matrix_Evolution<tSteps>& p );
-  std::array<double, time_steps> spin_up = {};
-  std::array<double, time_steps> spin_down = {};
+  template<typename vt>
+  friend std::ostream& operator<<( std::ostream& o, const Spin_Density_Matrix_Evolution<vt>& p );
+  std::vector<value_type> spin_up; 
+  std::vector<value_type> spin_down;
   int time_step = 0;
+  int time_steps;
   double dt;
   
 
@@ -20,7 +22,7 @@ public:
   constexpr static double value_tag = 1.1;
 
 
-  Spin_Density_Matrix_Evolution(double dt_): dt(dt_){} 
+  Spin_Density_Matrix_Evolution(double dt_,int time_steps_): dt(dt_),spin_up(time_steps_),spin_down(time_steps_),time_steps(time_steps_){} 
 
   template <typename State_Iterator>
   void operator ()(State_Iterator begin, State_Iterator end,
@@ -41,9 +43,9 @@ public:
 };
 
 
-template<int tSteps>
-std::ostream& operator<<( std::ostream& o, const Spin_Density_Matrix_Evolution<tSteps>& p ){
-  for(int i = 0; i < tSteps; i++){
+template<typename vt>
+std::ostream& operator<<( std::ostream& o, const Spin_Density_Matrix_Evolution<vt>& p ){
+  for(int i = 0; i < p.time_steps; i++){
     o << (i+1)*p.dt << " " << p.spin_up[i] << " " <<  p.spin_down[i] << std::endl; 
   }  
   return o;

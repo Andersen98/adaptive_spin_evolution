@@ -27,8 +27,9 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       ("max_occupation,o",po::value<int>(&conf.max_occupation)->default_value(16),"Max occupation level for each mode of the bath")
       ("time_start",po::value<double>(&conf.t0)->default_value(0.0),"start time of simulation")
       ("time_end,t", po::value<double>(&conf.tf)->default_value(12.0),"end time of simulation")
-      ("n_steps,N",po::value<int>(&conf.N)->default_value(300),"number of steps simulation takes");
-
+      ("n_steps,N",po::value<int>(&conf.N)->default_value(300),"number of steps simulation takes")
+      ("largest_frequency",po::value<double>(&conf.largest_frequency)->default_value(100),"this should be greater than your highest frequency in the run to avoid aliasing.");
+    
     //Add options available to both command line and config file
     po::options_description cmdline_options;
     cmdline_options.add(generic).add(config);
