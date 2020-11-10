@@ -24,24 +24,6 @@ g_0 = args.g0
 gamma = args.gamma #spectral intensity of resevior
 N = args.N
 
-#we use a sharply peaked lorentzian to describe density of states
-T = 1/(100*cavity_0) #this is like putting it in a box of length L (sets freq spaceing)
-dw = 1/(N*T) #frequency spacing
-q = 10 #quality factor (sharpness of lorentzian from scully dos cavity damped)
-#center lorentzian to omega_0
-# scale the lorentzian so that at omega_0, g_lorentz[argmin(abs(omega_0 - w))] is g_0
-
-def g_lorentz(w,omega_0,g_0,q,N):
-    dw,Nw = (w[1]-w[0],len(w))
-    idx_near_w0 = np.argmin(np.abs(w-omega_0))
-    near_w0 = w[idx_near_w0] #just consider this the new w0
-    unscaled_g = (w/(2*q))/((near_w0-w)**2+(w/(2*q))**2)
-    norm = g_0/unscaled_g[idx_near_w0]
-    g = norm* unscaled_g 
-    return(g)
-
-w = np.linspace(0,1/T,N)
-g = g_lorentz(w,omega_0,g_0,q,N)
 
 width = .1
 offset = .9999
@@ -59,8 +41,8 @@ def w_g_dist(N,w_0,width,scale, offset,g_0,cavity_0,gamma):
     g = np.append(g,g_0)
     return w, g
 w ,g = w_g_dist(N,omega_0,width,scale, offset,g_0,cavity_0,gamma)
-print(w)
-print(g)
+#print(w)
+#print(g)
 
 atom_output = args.emitter_out
 mode_output = args.bosons_out
