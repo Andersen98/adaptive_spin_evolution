@@ -38,15 +38,15 @@ int main(int argc, char * argv[]){
     
 
   
-  const double final_time = 5;
+  const double final_time = params.tf;
   //const double high_freq = 60*1.81;
   const double high_freq = params.largest_frequency;
   const double dt = 1/high_freq;
   const int time_steps = final_time/dt;
-  const double energy_cutoff = 0;
+  const double energy_cutoff = params.energy_cutoff;
   const int num_spins = 2;
   const int num_modes = 1000;
-  const int num_bits = 8;
+  const int num_bits = 4;
   const int max_level = (1<<num_bits) -1;
 
  
