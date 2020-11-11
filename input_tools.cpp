@@ -28,7 +28,8 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       ("time_start",po::value<double>(&conf.t0)->default_value(0.0),"start time of simulation")
       ("time_end,t", po::value<double>(&conf.tf)->default_value(12.0),"end time of simulation")
       ("n_steps,N",po::value<int>(&conf.N)->default_value(300),"number of steps simulation takes")
-      ("largest_frequency",po::value<double>(&conf.largest_frequency)->default_value(100),"this should be greater than your highest frequency in the run to avoid aliasing.");
+      ("largest_frequency",po::value<double>(&conf.largest_frequency)->default_value(100),"this should be greater than your highest frequency in the run to avoid aliasing.")
+      ("output_file",po::value<string>(&conf.output_file)->default_value("adaptive_spin_out"),"File that will be written out to");
     
     //Add options available to both command line and config file
     po::options_description cmdline_options;
@@ -58,7 +59,14 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       notify(vm);
     }
     ifs_param_file.close();
-      
+
+    ofstream ofs_output_file(conf.output_file.c_str());
+    if(!ofs_output_file){
+      cout << "cannot open output file: " << conf.output_file <<endl;
+      return true;
+    }
+    ofs_output_file.close();
+    
     if(vm.count("print_inputs")){
       cout <<  "cutoff: " << conf.energy_cutoff << endl;
       cout <<  "max_occupation: " << conf.max_occupation << endl;

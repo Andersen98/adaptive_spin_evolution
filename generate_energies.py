@@ -36,7 +36,7 @@ def w_g_dist(N,w_0,width,scale, offset,g_0,cavity_0,gamma):
 
     
     norm = 1/np.sum(w**2,axis=0)
-    g = gamma *norm * w
+    g = gamma *np.sqrt(norm) * w
     w = np.append(w,cavity_0)
     g = np.append(g,g_0)
     return w, g

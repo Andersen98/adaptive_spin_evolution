@@ -24,6 +24,7 @@ struct param_vals{
   std::vector<double> atom_levels;
   std::vector<double> mode_energies;
   std::vector<double> mode_couplings;
+  std::string output_file;
 };
 
 bool get_params(param_vals &params,int argc, char * argv[]);

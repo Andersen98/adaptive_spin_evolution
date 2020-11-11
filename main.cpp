@@ -83,6 +83,8 @@ int main(int argc, char * argv[]){
     
     
   }
-  cout << matrix_recorder <<endl;
+  ofstream ofs_output_file(params.output_file.c_str());
+  ofs_output_file << matrix_recorder <<endl;
+  ofs_output_file.close();
   return 0;
 }
