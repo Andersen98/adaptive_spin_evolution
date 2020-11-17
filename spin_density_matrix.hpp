@@ -39,8 +39,24 @@ public:
     }
     time_step++;
   }
-
+  template <typename State_Iterator>
+  std::array<double,2> get_spin_pop(State_Iterator begin, State_Iterator end){
+    std::array<double,2> result={};
+    double up,down;
+    while(begin != end){
+      if(begin->spin){
+	up += std::abs(begin->amp)*std::abs(begin->amp);
+      }else{
+	down += std::abs(begin->amp)*std::abs(begin->amp);
+      }
+      begin++;
+    }
+    result[0]= up;
+    result[1]=down;
+    return result;
+  }
 };
+
 
 
 template<typename vt>

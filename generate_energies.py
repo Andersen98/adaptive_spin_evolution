@@ -12,6 +12,7 @@ parser.add_argument('--gamma', type=float, help="Spectral intensity of bath")
 parser.add_argument('-N', type=int,help="Number of oscillators to use")
 parser.add_argument('--emitter_out',type=str,default="emitter_out", help="File output for emitter energies")
 parser.add_argument('--bosons_out',type=str,default="bosons_out",help="File output for boson energies and couplings")
+parser.add_argument('--fastest_time_scale',type=float,help="this determines what the highest frequency will be")
 
 args = parser.parse_args()
 
@@ -22,6 +23,7 @@ omega_0 = args.w0
 cavity_0 = args.v0
 g_0 = args.g0
 gamma = args.gamma #spectral intensity of resevior
+dt = args.fastest_time_scale
 N = args.N
 
 
@@ -40,7 +42,16 @@ def w_g_dist(N,w_0,width,scale, offset,g_0,cavity_0,gamma):
     w = np.append(w,cavity_0)
     g = np.append(g,g_0)
     return w, g
-w ,g = w_g_dist(N,omega_0,width,scale, offset,g_0,cavity_0,gamma)
+def w_g_rnd_dist(N,w_0,g_0,cavity_0,gamma,dt):
+    w = np.linspace(1/dt,0,num=(N-1),endpoint=False)
+    g = rng.random(N-1)
+    norm = 1/np.sum(g**2,axis=0)
+    g = gamma*g*np.sqrt(1/norm)
+    g = np.append(g,g_0)
+    w = np.append(w,cavity_0)
+    return w,g
+
+w ,g = w_g_rnd_dist(N,omega_0,g_0,cavity_0,gamma,dt)
 #print(w)
 #print(g)
 

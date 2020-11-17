@@ -1,8 +1,72 @@
 #include "input_tools.hpp"
 
-
+namespace pt = boost::property_tree;
 namespace po = boost::program_options;
+using boost::format;
 using namespace std;
+using boost::io::group;
+
+void param_vals::save(std::ofstream &o){
+  //empty property tree
+  pt::ptree tree;
+
+  tree.put("run_info.run_id",run_id);
+  tree.put("run_info.output_file",output_file);
+
+
+  //put the simple values into the tree
+  tree.put("energy_cutoff",energy_cutoff);
+  tree.put("t0",t0);
+  tree.put("tf",tf);
+  tree.put("energy_unit",energy_unit);
+  tree.put("max_occupation", max_occupation);
+  tree.put("dt", 1/largest_frequency);
+
+  vector<double>::iterator result;
+  result = std::max_element(mode_couplings.begin(),mode_couplings.end());
+  int max_idx = std::distance(mode_couplings.begin(),result);
+
+  tree.put("cavity_mode.energy",mode_energies[max_idx]);
+  tree.put("cavity_mode.couplings",mode_couplings[max_idx]);
+    
+  for_each(atom_levels.begin(),atom_levels.end(),
+	   [&](double j){tree.add("atom_params.energy_level",j);});
+
+  pt::ptree mode_values;
+  for(int i = 0; i < mode_energies.size(); i++){
+    pt::ptree child;
+    child.put("energy",mode_energies[i]);
+    child.put("coupling",mode_couplings[i]);
+
+    mode_values.push_back(std::make_pair("",child));
+  }
+  pt::ptree mode_info;
+  mode_info.put("total_count",mode_energies.size());
+  mode_info.put("strongly_coupled", 1);
+  mode_info.put("weakly_coupled", mode_energies.size()-1);
+  mode_info.put("spectral_density", "random_uniform");
+  mode_info.put("spectral_energy", spectral_energy);
+  tree.add_child("modes.mode_info",mode_info);
+  tree.add_child("modes.mode_values",mode_values);
+ 
+  pt::write_json(o,tree);
+}
+
+void param_vals::write_header(ofstream &o){
+
+  format lnBrk("%|88T=|\n");
+  o << lnBrk;
+  o << format("%|1$=88s|\n")%"RUN BEGIN";
+  o << lnBrk;
+  o << format("Step(i/%|4$-d|)%|13T~|%|1$-s|%|38T~|%|2$-s|%|63T~|%|3$-s|%|88T~|\n") % "Time" % "Spin Up Pop." % "Spin Down Pop."%N;
+  o << lnBrk;
+
+}
+//void param_vals::write_pop_run(std::ofstream&, int, double, double, double)
+void param_vals::write_pop_run(std::ofstream &o, int id, double time, double up, double down){
+  format popFmt("%|1$-d|/%|2$-d|%|13t|%|3$-1.14e|%|38t|%|4$-1.14e|%|63t|%|5$-1.14e|\n");
+  o << popFmt % id % N % time %up %down; 
+}
 
 
 //returns exit status
@@ -29,7 +93,7 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       ("time_end,t", po::value<double>(&conf.tf)->default_value(12.0),"end time of simulation")
       ("n_steps,N",po::value<int>(&conf.N)->default_value(300),"number of steps simulation takes")
       ("largest_frequency",po::value<double>(&conf.largest_frequency)->default_value(100),"this should be greater than your highest frequency in the run to avoid aliasing.")
-      ("output_file",po::value<string>(&conf.output_file)->default_value("adaptive_spin_out"),"File that will be written out to");
+      ("output_file",po::value<string>(&conf.output_file)->default_value("default_code_output"),"File that will be written out to");
     
     //Add options available to both command line and config file
     po::options_description cmdline_options;

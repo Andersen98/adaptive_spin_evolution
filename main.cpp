@@ -43,11 +43,12 @@ int main(int argc, char * argv[]){
   const double high_freq = params.largest_frequency;
   const double dt = 1/high_freq;
   const int time_steps = final_time/dt;
+  params.N = time_steps;
   const double energy_cutoff = params.energy_cutoff;
   const int num_spins = 2;
   const int num_modes = 1000;
-  const int num_bits = 4;
-  const int max_level = (1<<num_bits) -1;
+  const int num_bits = 8;
+  const long int max_level = (1<<num_bits) -1;
 
  
   Spin_Params spin_params;
@@ -75,16 +76,19 @@ int main(int argc, char * argv[]){
       initial_state,energy_cutoff);
 
 
- 
-  for(int i = 0; i <time_steps; i++){
-    h.simple_run(dt);
-    State_Vector v = h.get_psi_lbl();
-    matrix_recorder(v.begin(),v.end(),std::iterator_traits<State_Vector::iterator>::iterator_category());
-    
-    
+  //setup output stream
+  std::ofstream of(params.output_file.c_str());
+  if(of){
+    params.save(of);
+    params.write_header(of);
+    for(int i = 0; i <params.N; i++){
+      State_Vector v = h.get_psi_lbl();
+      std::array<double,2> pop = matrix_recorder.get_spin_pop(v.begin(),v.end());
+      params.write_pop_run(of,i+1,i*dt,pop[0],pop[1]);
+      h.simple_run(dt);
+    }
   }
-  ofstream ofs_output_file(params.output_file.c_str());
-  ofs_output_file << matrix_recorder <<endl;
-  ofs_output_file.close();
+  of.close();
+  
   return 0;
 }
