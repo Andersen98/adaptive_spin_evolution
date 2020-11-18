@@ -34,11 +34,16 @@ class hamiltonian{
   State_Vector psi_amp;
   State_Vector psi_delta;
   value_type energy_cutoff;
+
+
+  
   
 public:
+  std::vector<int> exceeded ; //flag for if mode was exceeded
   int level_cap = 0;
-
-  hamiltonian():g{{}},m_g{},m_energy{},energy_to_mode_idx{}{}
+  
+  
+  hamiltonian():g{{}},m_g{},m_energy{},energy_to_mode_idx{},exceeded(){}
   
   void setup(Iter_m m_begin,Iter_c c_begin, Spin_params_T spin_params_,
 	      State_Vector initial_state, value_type cutoff){
@@ -67,8 +72,9 @@ public:
     
     for(int i = 0; i < num_modes; i++){
       m_g[i] = m_copy[idx[i]];
-      for(int n = 0; n < max_level; n++)
+      for(int n = 0; n < max_level; n++){
 	g[n][i] = sqrt(n)*g_copy[idx[i]];
+      }
     }
     //idx_base = 0,1,2,3,4...n_modes represents default g ordering
     int idx_base[num_modes] = {};
@@ -102,14 +108,13 @@ public:
     
   }
 
-  State_Vector get_psi_lbl(){
+  State_Vector &get_psi_lbl(){
     State_Vector v(psi_lbl.size());
-    std::copy(psi_lbl.begin(),psi_lbl.end(),v.begin());
-    return v;
+    return psi_lbl;
   }
     
 
-  bool h_field(State_Vector delta, State_Ket ket, value_type cutoff, value_type dt){
+  bool h_field(State_Vector &delta, State_Ket ket, value_type cutoff, value_type dt){
 
     bool result = false;
     
@@ -158,9 +163,9 @@ public:
   }
 
   void simple_run(value_type dt){
-
+    exceeded.clear();
     psi_delta.clear();
-    psi_delta.reserve(3*psi_amp.size() );
+    psi_delta.reserve(2*psi_amp.size() );
         
     bool stop = false;
     for(auto& ket:psi_amp){
@@ -168,7 +173,7 @@ public:
       if(stop)
 	break;
     }
-    stop = false;
+    /* stop = false;
     for(auto& ket:psi_amp){
       stop = h_field(psi_delta, ket, energy_cutoff,dt);
       if (stop)
@@ -179,7 +184,8 @@ public:
       stop = h_atom(psi_delta, ket, energy_cutoff, dt);
 	if (stop)
 	  break;
-    }
+    }*/
+
     
     sort_and_merge_by_label(psi_delta,psi_lbl);
     normalize_state(psi_lbl);
@@ -216,38 +222,66 @@ public:
 
   //merges delta into psi
   void sort_and_merge_by_label(State_Vector &delta, State_Vector &psi){
-
+    /*std::cout <<"PSI BEGIN-----------------"<<std::endl;
+    for(auto z:psi){
+      std::cout <<z <<endl;
+    }
+    std::cout <<"delta BEGIN-----------------"<<std::endl;
+    for(auto z:delta){
+      std::cout <<z <<endl;
+      }*/
+    
+    
     //do the duplicate problem beforehand
     using sIt = typename State_Vector::iterator;
 
+    int orig = delta.size();
     //merge the duplicates between delta_psi and ps
     for(int i = 0; i<delta.size(); i++ ){
-      pair<sIt,sIt> eq= equal_range(psi.begin(),psi.end(),delta[i],
-				       [](auto &it1,auto&it2){return it1 < it2 ;}) ;
+      pair<sIt,sIt> eq= equal_range(psi.begin(),psi.end(),delta[i]) ;
 
       //wanna find 34 in a list
       // 0 23 24 56 (end)
       //eq.first points to 24
       //eq.second points to 56
-      
-      if(std::distance(eq.first,eq.second) > 1){
-	//add amplitude
-	(eq.first)->add(delta[i]);
-	//remove from delta_psi
+      /*
+      std::cout <<"delta REF-----------------"<<std::endl;
+      std::cout << delta[i] << std::endl;
+      while(eq.first < eq.second){
+	std::cout <<"EQL RANGE:" <<std::endl;
+	std::cout << (*eq.first) <<std::endl;
+	eq.first++;
+	}*/
+	
+      if(eq.second == psi.begin()){
+	//no elements greater than or equal to
+      }else if( eq.second == (++psi.begin())){
+	//there are no elements greater than, so we have a match!\
+	//(case where entire list is a match)
+	(eq.first)->amp += delta[i].amp;
 	delta.erase(delta.begin()+i);
+	i--;
+
+      }else if((eq.second!=psi.begin()) ){
+	//This should be the case where we also have a match
+
+	(eq.first)->amp +=delta[i].amp;
+	delta.erase(delta.begin()+i);
+
 	//adjust indexing from delete
 	i--;
       }
     }
 
+
+        
     //sort delta_psi by label
-    sort(delta.begin(),delta.end(),
-	 [](auto &it1,auto&it2){return it1 < it2 ;});
+    sort(delta.begin(),delta.end());
 
     //reserve space
     psi.reserve(psi.size() + delta.size());
 
-        //save midpoint for later
+    //save midpoint for later
     sIt midpoint_marker = psi.end();
     //move the delta elements over to psi using move_iter, which
     //moves elements rather than copying them
@@ -255,15 +289,15 @@ public:
 		   make_move_iterator(delta.begin()),
 		   make_move_iterator(delta.end()));
     
-    inplace_merge(psi.begin(),midpoint_marker,psi.end(),
-		  [](auto &it1,auto&it2){return it1 < it2 ;});// [first,middle) and [middle,last)
+    inplace_merge(psi.begin(),midpoint_marker,psi.end());// [first,middle) and [middle,last)
+    
     
 
   }
 
   //this function modifies the delta vector. I.e. adds on to it. 
   bool h_dipole(State_Vector &delta, State_Ket &c, value_type cutoff, value_type dt){
-
+    bool stop = false;
     //reserve space
     delta.reserve(delta.size()+2*num_modes);
     
@@ -275,47 +309,65 @@ public:
       
     int j=0;
     Amplitude prefactor =  -one_i*dt*amp;
-    while(j<num_modes&&(std::abs(prefactor*g[max_level][j]) > cutoff)){
+    while(j < num_modes &&(std::abs(prefactor*g[max_level][j]) > cutoff)){
       
       State_Ket r = c;
       State_Ket l = c;
-      r.spin = !r.spin;
-      l.spin = !l.spin;
+      State_Ket d = c;
       int level = c.get_mode(j);
-      Amplitude factor_r;
-      Amplitude factor_l;
+      Amplitude factor_r=0;
+      Amplitude factor_l=0;
 
       switch(level){
       case(0):
 	factor_r = prefactor*g[level+1][j];
 	if(std::abs(factor_r)> cutoff){
-	  r.multiply(factor_r);
+	  r.amp = factor_r;
+	  r.spin=!r.spin;
 	  r.increment_mode(j);
 	  delta.push_back(r);
+	  d.amp =  prefactor*(m_g[j]*level +  spin_params.energy*((d.spin)? .5 : -.5));
+	  delta.push_back(d);
 	}
 	break;
       case(max_level):
+	
+	exceeded.push_back(j);
 	factor_l = prefactor*g[level][j];
 	if(std::abs(factor_l)>cutoff){
-	  l.multiply(factor_l);
+	  l.amp = factor_l * prefactor*(m_g[j]*level + spin_params.energy*((l.spin)? .5:-.5));
+	  d.amp =  prefactor*(m_g[j]*level +  spin_params.energy*((r.spin)? .5 : -.5));
+	  l.spin = !l.spin;
 	  l.decrement_mode(j);
 	  delta.push_back(l);
-	  level_cap ++;
+	  d.amp =  prefactor*(m_g[j]*level +  spin_params.energy*((d.spin)? .5 : -.5));
+	  delta.push_back(d);
+	  
 	}
 	break;
       default:
+	bool passed = false;
 	factor_r = prefactor*g[level+1][j];
 	if(std::abs(factor_r) > cutoff){
-	  r.multiply(factor_r);
+	  r.amp = factor_r + prefactor*(m_g[j]*level+ spin_params.energy*((r.spin)? .5:-.5));
+	  r.spin = !r.spin;
 	  r.increment_mode(j);
 	  delta.push_back(r);
+	  passed = true;
 	}
 	factor_l = prefactor*g[level][j];
 	if(std::abs(factor_l)>cutoff){
-	  l.multiply(factor_l);
+	  l.amp = factor_l * prefactor*(m_g[j]*level + spin_params.energy* ((r.spin)?.5:-.5));
+	  l.spin = !l.spin;
 	  l.decrement_mode(j);
 	  delta.push_back(l);
+	  passed = true;
 	}
+	if(passed){
+	  d.amp =  prefactor*(m_g[j]*level +  spin_params.energy*((d.spin)? .5 : -.5));
+	  delta.push_back(d);
+	}
+
 	break;
       }//end switch
       
@@ -323,7 +375,8 @@ public:
     }//end j's
 
    
-    return true;
+    return stop;
   }//end func
+
 
 };

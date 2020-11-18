@@ -70,11 +70,13 @@ public:
   
   bool operator<(const partial_config &d) const{
     //copied from Dice Determinat.h
+    
     for (int i=giant_count -1; i >=0; i--){
       if(rep[i] > d.rep[i] /*int compare is swapped from mode compare */) {
 	return true;
+      }else if (rep[i] < d.rep[i]){
+      	return false;
       }
-      else if (rep[i] < d.rep[i]) return false;
     }
     return false;
   }
@@ -247,10 +249,19 @@ public:
   
   //conpare label + spin
   bool operator <(const State_Ket &c) const{
-    return ((lbl < c.lbl )&&(spin < c.spin));
+    if( spin < c.spin){
+      return true;
+
+    }else if(spin == c.spin && (lbl < c.lbl) ){
+      return true;
+    }else{
+      //spin > c.spin
+      return false;
+    }
+    
   }
   
-  //JUST CHECKS TO SEE IF LABELS ARE THE SAME. 
+
   bool operator==(const State_Ket &c)const{
     return( (spin== c.spin)&& (lbl == c.lbl));
   }

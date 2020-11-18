@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/program_options.hpp>
-
+#include <cassert>
 //property tree
 
 #include <boost/property_tree/json_parser.hpp>
@@ -19,7 +19,7 @@
 //write output
 #include <boost/format.hpp>
 #include <iomanip>
-
+#include <filesystem>
 
 
 struct param_vals{
@@ -31,12 +31,14 @@ struct param_vals{
   void save(std::ofstream &o);
   void write_header(std::ofstream &o);
   void write_pop_run(std::ofstream &o, int id, double time, double up, double down);
+  void write_stats_header(std::ofstream &o);
+  void write_stats(std::ofstream &o, int id, double time, int config_space, std::vector<int> exceeded);
   //  void wrie_populations(ofstream &o);
 
   
   //run info
   int run_id;
-  std::string output_file;
+  std::string output_directory;
 
   //input files
   std::string config_file_path;
@@ -55,7 +57,7 @@ struct param_vals{
   //physics (time)
   double t0;
   double tf;
-  double largest_frequency;
+  double dt;
   int N;
   
 };

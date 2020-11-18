@@ -39,16 +39,9 @@ int main(int argc, char * argv[]){
 
   
   const double final_time = params.tf;
-  //const double high_freq = 60*1.81;
-  const double high_freq = params.largest_frequency;
-  const double dt = 1/high_freq;
+  const double dt = params.dt;
   const int time_steps = final_time/dt;
-  params.N = time_steps;
   const double energy_cutoff = params.energy_cutoff;
-  const int num_spins = 2;
-  const int num_modes = 1000;
-  const int num_bits = 8;
-  const long int max_level = (1<<num_bits) -1;
 
  
   Spin_Params spin_params;
@@ -58,7 +51,7 @@ int main(int argc, char * argv[]){
   //also typedefs
   typedef complex<double> Amplitude;
   typedef bool spin_type;
-  typedef State_Ket<spin_type,Amplitude, num_modes,num_bits> State_Ket;
+  typedef State_Ket<spin_type,Amplitude, NUM_MODES,NUM_BITS> State_Ket;
   typedef vector<State_Ket> State_Vector;
   typedef vector<double>::iterator Iter_m; //mode iterator
   typedef vector<double>::iterator Iter_c; //coupling iterator
@@ -76,19 +69,33 @@ int main(int argc, char * argv[]){
       initial_state,energy_cutoff);
 
 
+
   //setup output stream
-  std::ofstream of(params.output_file.c_str());
-  if(of){
-    params.save(of);
+  string info_file = params.output_directory+to_string(params.run_id)+".info";
+  string output_file = params.output_directory+to_string(params.run_id)+".out";
+  string stats_file = params.output_directory+to_string(params.run_id)+".stats";
+  std::ofstream of(output_file.c_str());
+  std::ofstream of_stats(stats_file.c_str());
+  std::ofstream of_info(info_file.c_str());
+  if(of&& of_stats&&of_info){
+    params.save(of_info);
     params.write_header(of);
+    params.write_stats_header(of_stats);
     for(int i = 0; i <params.N; i++){
-      State_Vector v = h.get_psi_lbl();
+      State_Vector &v = h.get_psi_lbl();
       std::array<double,2> pop = matrix_recorder.get_spin_pop(v.begin(),v.end());
       params.write_pop_run(of,i+1,i*dt,pop[0],pop[1]);
+      //    params.write_stats(of_stats, i+1, i*dt,v.size(), h.exceeded);
       h.simple_run(dt);
+      cout << "run: (" << i << "/" << params.N<<") | ";
+      cout << "number of states: " << v.size();
+      cout.flush();
     }
   }
+  cout <<endl;
   of.close();
+  of_info.close();
+  of_stats.close();
   
   return 0;
 }
