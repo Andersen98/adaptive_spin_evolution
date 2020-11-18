@@ -13,7 +13,7 @@
 #include "configuration.hpp"
 #include "input_tools.hpp"
 #include "hamiltonian.hpp"
-#include "spin_density_matrix.hpp"
+
 
 using namespace std;
 
@@ -51,24 +51,19 @@ int main(int argc, char * argv[]){
   //also typedefs
   typedef complex<double> Amplitude;
   typedef bool spin_type;
-  typedef State_Ket<spin_type,Amplitude, NUM_MODES,NUM_BITS> State_Ket;
-  typedef vector<State_Ket> State_Vector;
+  typedef State_Ket<spin_type,Amplitude, NUM_MODES,NUM_BITS> state_ket;
+  typedef vector<state_ket> state_vector;
   typedef vector<double>::iterator Iter_m; //mode iterator
   typedef vector<double>::iterator Iter_c; //coupling iterator
   //setup initial conditions
-  State_Vector initial_state(1);
+  state_vector initial_state(1);
   initial_state[0].amp = 1;
   initial_state[0].spin = true;
-  //make callback to calculate the population
-  typedef Spin_Density_Matrix_Evolution<double> PC;
-  PC matrix_recorder(dt,time_steps);
-  //make hamiltonian
-  hamiltonian<Iter_m,Iter_c,Spin_Params, State_Vector> h;
   
-  h.setup(params.mode_energies.begin(),params.mode_couplings.begin(),spin_params,
-      initial_state,energy_cutoff);
-
-
+  
+  //make hamiltonian
+  hamiltonian<NUM_MODES,NUM_BITS> h(initial_state,params);
+  
 
   //setup output stream
   string info_file = params.output_directory+to_string(params.run_id)+".info";
@@ -77,22 +72,19 @@ int main(int argc, char * argv[]){
   std::ofstream of(output_file.c_str());
   std::ofstream of_stats(stats_file.c_str());
   std::ofstream of_info(info_file.c_str());
+  vector<int> exceeded(0);
   if(of&& of_stats&&of_info){
     params.save(of_info);
     params.write_header(of);
     params.write_stats_header(of_stats);
     for(int i = 0; i <params.N; i++){
-      State_Vector &v = h.get_psi_lbl();
-      std::array<double,2> pop = matrix_recorder.get_spin_pop(v.begin(),v.end());
-      params.write_pop_run(of,i+1,i*dt,pop[0],pop[1]);
-      //    params.write_stats(of_stats, i+1, i*dt,v.size(), h.exceeded);
-      h.simple_run(dt);
-      cout << "run: (" << i << "/" << params.N<<") | ";
-      cout << "number of states: " << v.size();
-      cout.flush();
+      std::pair<double,double> pop = h.get_spin_pop();
+      params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
+      params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
+      h.run(dt);
     }
   }
-  cout <<endl;
+  
   of.close();
   of_info.close();
   of_stats.close();

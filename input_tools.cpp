@@ -212,6 +212,9 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
   }
   ifs.close();
 
+  //set up and down energy
+  conf.up_energy = .5*conf.atom_levels[1];
+  conf.down_energy = -.5*conf.atom_levels[1];
 
   cout << "Attempting to load mode parameters at: " << conf.mode_path <<endl;
   ifstream ifs_mode(conf.mode_path.c_str());

@@ -53,14 +53,19 @@ struct param_vals{
   std::vector<double> atom_levels;
   std::vector<double> mode_energies;
   std::vector<double> mode_couplings;
-
+  double up_energy;
+  double down_energy;
+  
   //physics (time)
   double t0;
   double tf;
   double dt;
   int N;
+
   
 };
+
+
 
 bool get_params(param_vals &params,int argc, char * argv[]);
 

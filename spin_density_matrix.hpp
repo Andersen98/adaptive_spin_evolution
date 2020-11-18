@@ -1,5 +1,6 @@
 #ifndef ADAPTIVE_SPIN_DENSITY_MATRIX
 #define ADAPTIVE_SPIN_DENSITY_MATRIX 1
+#include <utility>
 #include <iterator>
 #include <algorithm>
 #include <iostream>
@@ -40,19 +41,16 @@ public:
     time_step++;
   }
   template <typename State_Iterator>
-  std::array<double,2> get_spin_pop(State_Iterator begin, State_Iterator end){
-    std::array<double,2> result={};
-    double up,down;
+  std::pair<double,double> get_spin_pop(State_Iterator begin, State_Iterator end){
+    std::pair<double,double> result=std::make_pair<double,double>(0,0);
     while(begin != end){
       if(begin->spin){
-	up += std::abs(begin->amp)*std::abs(begin->amp);
+	result.first += std::abs(begin->amp)*std::abs(begin->amp);
       }else{
-	down += std::abs(begin->amp)*std::abs(begin->amp);
+	result.second += std::abs(begin->amp)*std::abs(begin->amp);
       }
       begin++;
     }
-    result[0]= up;
-    result[1]=down;
     return result;
   }
 };
