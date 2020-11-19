@@ -92,7 +92,7 @@ public:
     for(const state_ket &k: p){
       N += abs_sqrd(k);
     }
-    N = 1/N;
+    N = 1/std::sqrt(N);
     for_each(p.begin(),p.end(),[N](state_ket &k){k.amp*=N;});
     
   }

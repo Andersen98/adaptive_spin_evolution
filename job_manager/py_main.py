@@ -13,7 +13,7 @@ if __name__=='__main__':
     executable = "/home/ethan/curr_proj/adaptive_spin"
     run_id=123
     #Run Info (system count)
-    num_modes = 2
+    num_modes = 500
     max_occupation = 15
 
     #Energy Paths
@@ -23,15 +23,15 @@ if __name__=='__main__':
     
     #Energy Params
     remake_energies = False
-    w0 = 1.5
-    g0= 0
-    v0 = 1.5
-    cutoff =0;
+    w0 = 2
+    g0= 1.5
+    v0 = 1
+    cutoff = 100;
     spectral_energy = .01
 
     #Time Params
     dt = .001
-    tf =20*dt
+    tf =400*dt
     
     #=================================================================#
     #                      Make Energies                               #

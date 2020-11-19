@@ -176,26 +176,6 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
   }
   
  
-  //set time steps
-  conf.N = (conf.tf-conf.t0)/conf.dt;
-    
-  if(vm.count("print_inputs") || vm.count("verbose")){
-    cout << "run id: " << conf.run_id << endl;
-    cout << "output dir: " << conf.output_directory << endl;
-    cout << "output file: " << conf.output_directory + to_string(conf.run_id)+".dat"<< endl;
-    cout <<  "atom_file: " << conf.atom_path << endl;
-    cout <<  "mode_file: " << conf.mode_path << endl;
-    cout <<  "cutoff: " << conf.energy_cutoff << endl;
-    cout <<  "energy_unit: " << conf.energy_unit << endl;
-    cout << "t0: " << conf.t0 << endl;
-    cout << "tf: " << conf.tf << endl;
-    cout << "dt: " << conf.dt << endl;
-    cout << "N : " << conf.N << endl;
-    if(vm.count("print_inputs")){
-      return true;
-    }
-  }
-
   //read in data for modes and couplings and atomic energies
   if(vm.count("verbose")){
     cout << "Attempting to load emitter parameters at: " << conf.atom_path <<endl;
@@ -245,6 +225,29 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     }
   }  
   ifs_mode.close();
+
+  
+  //set time steps
+  conf.N = (conf.tf-conf.t0)/conf.dt;
+    
+  if(vm.count("print_inputs") || vm.count("verbose")){
+    cout << "run id: " << conf.run_id << endl;
+    cout << "output dir: " << conf.output_directory << endl;
+    cout << "output file: " << conf.output_directory + to_string(conf.run_id)+".dat"<< endl;
+    cout <<  "atom_file: " << conf.atom_path << endl;
+    cout <<  "mode_file: " << conf.mode_path << endl;
+    cout << "spin up energy: " << conf.up_energy <<endl;
+    cout << "spin down energy: " << conf.down_energy <<endl;
+    cout <<  "cutoff: " << conf.energy_cutoff << endl;
+    cout <<  "energy_unit: " << conf.energy_unit << endl;
+    cout << "t0: " << conf.t0 << endl;
+    cout << "tf: " << conf.tf << endl;
+    cout << "dt: " << conf.dt << endl;
+    cout << "N : " << conf.N << endl;
+    if(vm.count("print_inputs")){
+      return true;
+    }
+  }
 
   
   assert(vm.count("run_id"));
