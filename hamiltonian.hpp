@@ -23,6 +23,7 @@ using std::array;
 
 //algorithms
 using std::sort;
+using std::inplace_merge;
 using std::set_difference;
 using std::set_intersection;
 using std::for_each;
@@ -51,7 +52,7 @@ class hamiltonian{
 public:
   
   hamiltonian(state_vector initial_state ,
-	      const param_vals &params_):g{{0}},m{0},params(params_),num_levels(1<<num_bits){
+	      const param_vals &params_):g{{0}},m{0},params(params_),num_levels(1<<num_bits),psi_lbl(initial_state),psi_amp(initial_state){
 
     
     vector<pair<int,double>> idx_g_pairs(num_modes);
@@ -61,23 +62,24 @@ public:
     
     sort(idx_g_pairs.begin(),idx_g_pairs.end(),[](auto &it1,auto &it2){return it1.second > it2.second;});
 
-    int j = 0;
-    for(auto &i_g: idx_g_pairs){
-      int i = i_g.first;
-      double gi = i_g.second;
-      //DEBUG
-      assert(abs( gi - params.mode_couplings[i]) < .0001);
-      //DEnd
-      //descending order
-      m[j] = params.mode_energies[i];
-
-      for(int n = 0; n < num_levels; n++){
-	g[n][j] = gi*std::pow(n,.5);
-      }
-      //DEBUG
-      assert(abs( g[1][j] - gi) < .0001);
-      //DEnd
+    for(int j = 0; j < num_modes; j++){
+	int i = idx_g_pairs[j].first;
+	double gi = idx_g_pairs[j].second;
+	//DEBUG
+	assert(abs( gi - params.mode_couplings[i]) < .0001);
+	//DEnd
+	//descending order
+	m[j] = params.mode_energies[i];
+	
+	for(int n = 0; n < num_levels; n++){
+	  g[n][j] = gi*std::pow(n,.5);
+	}
+	//DEBUG
+	assert(abs( g[1][j] - gi) < .0001);
+	//DEnd
     }
+
+    
   }
   
   
@@ -88,7 +90,7 @@ public:
 
     double N = 0;
     for(const state_ket &k: p){
-      N += abs_sqrd(p);
+      N += abs_sqrd(k);
     }
     N = 1/N;
     for_each(p.begin(),p.end(),[N](state_ket &k){k.amp*=N;});
@@ -204,6 +206,10 @@ public:
       //Dend
     }
 
+     
+    typename state_vector::iterator set_int,diff_end;
+    psi_lbl.reserve(psi_lbl.size()+psi_delta.size());
+    diff_end = psi_lbl.end();
     /* ========set_difference=============
       "Copies the elements from the sorted range [first1, last1) which are 
       not found in the sorted range [first2, last2) to the range beginning at d_first."
@@ -213,9 +219,9 @@ public:
       Method: use set difference and std::back_inserter to append elements from delta that are not 
       in lbl
     */
-    psi_lbl.reserve(psi_lbl.size()+psi_delta.size());
-    typename state_vector::iterator set_diff,set_int;
     set_difference(psi_delta.begin(),psi_delta.end(),psi_lbl.begin(),psi_lbl.end(),std::back_inserter(psi_lbl));
+    
+    
     /*=======set intersection
       "Constructs a sorted range beginning at d_first consisting of elements that are found in 
       both sorted ranges [first1, last1) and [first2, last2). If some element is found m times 
@@ -227,17 +233,32 @@ public:
 
       Method: the intersection is copied to psi_amp. then we add the two up to the consrtucted range
      */
-    set_int= set_intersection(psi_delta.begin(),psi_delta.end(),psi_lbl.begin(),psi_lbl.end(),
+  
+    set_int= set_intersection(psi_delta.begin(),psi_delta.end(),psi_lbl.begin(),diff_end,
 			      psi_amp.begin());
     int end_size = std::distance(psi_amp.begin(),set_int);
     for(int i = 0; i < end_size; i++){
       psi_lbl[i].amp += psi_amp[i].amp;
       
     }
+
+
+    
+    /*=========in place merge=================
+      "Merges two consecutive sorted ranges [first, middle) and [middle, last)
+      into one sorted range [first, last).A sequence [first, last) is said to be sorted with
+      respect to a comparator comp if for any iterator it pointing to the sequence and any 
+      non-negative integer n such that it + n is a valid iterator pointing to an element of 
+      the sequence, comp(*(it + n), *it) evaluates to false. "
+      
+      returns(none)
+     */
+    inplace_merge(psi_lbl.begin(),diff_end,psi_lbl.end());
+
     psi_amp.resize(psi_lbl.size());
+    normalize_state(psi_lbl);
     copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
     sort(psi_amp.begin(),psi_amp.end(), [](auto &it1,auto &it2){return(abs_sqrd(it1)>abs_sqrd(it2));});   
-    
 
   }
 
@@ -256,7 +277,7 @@ public:
     }
 
     merge_and_sort();
-
+    
   }
     
     

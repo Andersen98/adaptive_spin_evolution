@@ -81,8 +81,7 @@ if __name__=='__main__':
         "-m":prefix_energy+m_name,
         "--cutoff=":cutoff,
         "--tf=":tf,
-        "--dt=":dt,
-        "-v":""
+        "--dt=":dt
         }
 
 

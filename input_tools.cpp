@@ -156,11 +156,12 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     
   if(vm.count("config_file")){
     bool result = false;
-    
-    cout << "Searching for config file: " << conf.config_file_path << endl;
+    if(vm.count("verbose")){
+      cout << "Searching for config file: " << conf.config_file_path << endl;
+    }
     ifstream ifs_param_file(conf.config_file_path.c_str());
     if (!ifs_param_file){
-      cout << "Cannot find config file, using command line arguments as input parameters."<<endl;
+      cout << "Cannot find config file, Exiting."<<endl;
       result = true;
     }else{
       cout << "Found config file: " << conf.config_file_path << endl;
@@ -196,7 +197,9 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
   }
 
   //read in data for modes and couplings and atomic energies
-  cout << "Attempting to load emitter parameters at: " << conf.atom_path <<endl;
+  if(vm.count("verbose")){
+    cout << "Attempting to load emitter parameters at: " << conf.atom_path <<endl;
+  }
   ifstream ifs(conf.atom_path.c_str());
   if(!ifs){
     cerr<< "Cannot open: " << conf.atom_path << endl;
@@ -204,7 +207,9 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     ifs.close();
     return false;
   }else{
-    cout << "Success\n";
+    if(vm.count("verbose")){
+      cout << "Success\n";
+    }
     for(double i; ifs >> i;){
       conf.atom_levels.push_back(i);
       //cout << conf.atom_levels.back();
@@ -216,7 +221,10 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
   conf.up_energy = .5*conf.atom_levels[1];
   conf.down_energy = -.5*conf.atom_levels[1];
 
-  cout << "Attempting to load mode parameters at: " << conf.mode_path <<endl;
+  if(vm.count("verbose")){
+    cout << "Attempting to load mode parameters at: " << conf.mode_path <<endl;
+  }
+  
   ifstream ifs_mode(conf.mode_path.c_str());
   if(!ifs_mode){
     cerr<< "Cannot open: " << conf.mode_path << endl;
@@ -224,7 +232,9 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     ifs_mode.close();
     return false;
     }else{
-    cout << "Success\n";
+    if(vm.count("verbose")){
+      cout << "Success\n";
+    }
     for(double i; ifs_mode >> i;){
       conf.mode_energies.push_back(i);
       ifs_mode >> i;

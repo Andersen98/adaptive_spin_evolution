@@ -74,13 +74,14 @@ int main(int argc, char * argv[]){
   std::ofstream of_info(info_file.c_str());
   vector<int> exceeded(0);
   if(of&& of_stats&&of_info){
-    params.save(of_info);
-    params.write_header(of);
-    params.write_stats_header(of_stats);
+    //params.save(of_info);
+    //params.write_header(of);
+    //params.write_stats_header(of_stats);
     for(int i = 0; i <params.N; i++){
       std::pair<double,double> pop = h.get_spin_pop();
-      params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
-      params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
+      //params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
+      //params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
+      of << i << "\t" << i*dt << "\t" << h.get_psi_size() << "\t" << pop.first << "\t" << pop.second << endl;
       h.run(dt);
     }
   }
