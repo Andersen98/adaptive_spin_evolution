@@ -1,3 +1,8 @@
+#ifndef ADAPTIVE_SPIN_HAMILTONIAN
+#define ADAPTIVE_SPIN_HAMILTONIAN 1
+
+
+#include <cassert>
 #include <array>
 #include <vector>
 #include <algorithm>
@@ -5,11 +10,12 @@
 #include <utility>
 #include <cmath>
 #include <iterator>
+#include <tuple>
 
 
 #include "input_tools.hpp"
 #include "configuration.hpp"
-#include <cassert>
+
 
 
 //numeric
@@ -20,6 +26,8 @@ using std::abs;
 using std::pair;
 using std::vector;
 using std::array;
+using std::tuple;
+
 
 //algorithms
 using std::sort;
@@ -119,7 +127,26 @@ public:
     return result;
 
   }
+  
+  array<tuple<int,double,double>,num_modes> get_modeLbl_quanta_pop(){
+    array<tuple<int,double,double>,num_modes> result;
 
+    for_each(result.begin(),result.end(),[j=0](auto &el)mutable{el= std::make_tuple<int,double,double>(j++,0,0);});
+    for_each(result.begin(),result.end(),[&](auto &el){
+      for(auto &ket:psi_lbl){
+	double probability =abs_sqrd(ket);
+	int number_expectation =0;
+	int modeLbl = std::get<0>(el);
+	int nVal = ket.get_mode(modeLbl);
+	std::get<1>(el) += nVal*probability;
+	std::get<2>(el) += probability;
+	  
+      };});
+    return result;
+  }
+
+         
+    
   //returns true to halt evaluation
   bool h_dipole(int idx,double dt){
     bool stop = false;
@@ -134,7 +161,7 @@ public:
     double sum_field=0;
     double sum_emitter = psi_amp[idx].spin ? params.up_energy:params.down_energy;
     int j = 0;
-    complex<double> prefactor = -1i *dt * psi_amp[idx].amp;
+    complex<double> prefactor = std::complex<double>(0,-1) *dt * psi_amp[idx].amp;
     while((j < num_modes) && (params.energy_cutoff < premagnitude*g[num_levels-1][j]) ){
 
       int level = psi_amp[idx].get_mode(j);
@@ -258,7 +285,8 @@ public:
     psi_amp.resize(psi_lbl.size());
     normalize_state(psi_lbl);
     copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-    sort(psi_amp.begin(),psi_amp.end(), [](auto &it1,auto &it2){return(abs_sqrd(it1)>abs_sqrd(it2));});   
+    sort(psi_amp.begin(),psi_amp.end(), [](auto &it1,auto &it2){return(abs_sqrd(it1)>abs_sqrd(it2));});
+    
 
   }
 
@@ -278,14 +306,9 @@ public:
 
     merge_and_sort();
     
-  }
-    
+  }  
     
 };
   
 
-  
-  
-
-  
-  
+#endif  

@@ -1,4 +1,4 @@
-#include <vector>
+
 #include <iostream>
 #include <bitset>
 #include <algorithm>
@@ -8,10 +8,11 @@
 #include <complex>
 #include <utility>
 #include <string>
-#include <cassert>
+#include <tuple>
 
 #include "configuration.hpp"
 #include "input_tools.hpp"
+
 #include "hamiltonian.hpp"
 
 
@@ -69,19 +70,22 @@ int main(int argc, char * argv[]){
   string info_file = params.output_directory+to_string(params.run_id)+".info";
   string output_file = params.output_directory+to_string(params.run_id)+".out";
   string stats_file = params.output_directory+to_string(params.run_id)+".stats";
+  string mode_file = params.output_directory+to_string(params.run_id)+".modes";
   std::ofstream of(output_file.c_str());
   std::ofstream of_stats(stats_file.c_str());
   std::ofstream of_info(info_file.c_str());
+  std::ofstream of_mode(mode_file.c_str());
   vector<int> exceeded(0);
   if(of&& of_stats&&of_info){
-    //params.save(of_info);
-    //params.write_header(of);
-    //params.write_stats_header(of_stats);
+    params.save(of_info);
+    params.write_header(of);
+    params.write_stats_header(of_stats);
+    params.write_mode_pop_header(of_mode);
     for(int i = 0; i <params.N; i++){
       std::pair<double,double> pop = h.get_spin_pop();
-      //params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
-      //params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
-      of << i << "\t" << i*dt << "\t" << h.get_psi_size() << "\t" << pop.first << "\t" << pop.second << endl;
+      params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
+      params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
+      //params.write_mode_pop(of_mode,i+1,i*dt,h.get_modeLbl_quanta_pop());
       h.run(dt);
     }
   }
@@ -89,6 +93,7 @@ int main(int argc, char * argv[]){
   of.close();
   of_info.close();
   of_stats.close();
+  of_mode.close();
   
   return 0;
 }

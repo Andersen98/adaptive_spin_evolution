@@ -53,7 +53,7 @@ void param_vals::save(std::ofstream &o){
 }
 
 void param_vals::write_header(ofstream &o){
-
+  o <<format("PSTART~%|1$-d| DSTART~%|2$-d|\n") %5 %7; 
   format lnBrk("%|88T=|\n");
   o << lnBrk;
   o << format("%|1$=88s|\n")%"RUN BEGIN";
@@ -68,6 +68,31 @@ void param_vals::write_pop_run(std::ofstream &o, int id, double time, double up,
   o << popFmt % id % N % time %up %down; 
 }
 
+void param_vals::write_mode_pop_header(std::ofstream &o){
+  o <<format("PSTART~%|1$-d| DSTART~%|2$-d|\n") %5 %7; 
+  format lnBrk("%|104T=|\n");
+  o << lnBrk;
+  o << format("%|1$=104s|\n")%"RUN BEGIN";
+  o << lnBrk;
+  o << format("Step(i/%|5$-d|)%|13T~|%|1$-s|%|38T~|%|2$-s|%|52T~|%|3$-s|%|81T~|%|4$-s|%|98T~|\n") % "Time" % "Mode Label" % "<n>" % "Pop" %N;
+  o << lnBrk;
+
+
+}
+void param_vals::write_mode_pop(std::ofstream &o,int id, double time,std::array<std::tuple<int,double,double>,NUM_MODES> mode_lbl_quanta_pop){
+  format mode("%|6$-d|/%|5$-d|%|13t|%|1$-1.10e|%|38t|%|2$-d|%|52t|%|3$-1.17e|%|81t|%|4$-1.17e|%|104t|\n");
+
+  for(int i =0; i < NUM_MODES;i++){
+      int lbl = std::get<0>(mode_lbl_quanta_pop[i]);
+      double quanta = std::get<1>(mode_lbl_quanta_pop[i]);
+      double pop = std::get<2>(mode_lbl_quanta_pop[i]);
+
+    o<< mode  %time  % lbl % quanta % pop %N %id;
+  }
+
+  
+
+}
 void param_vals::write_stats_header(std::ofstream &o){
 
   format lnBrk("%|88T=|\n");

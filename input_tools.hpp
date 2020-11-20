@@ -1,25 +1,23 @@
 #ifndef ADAPTIVE_INPUT_PARAMETERS
 #define ADAPTIVE_INPUT_PARAMETERS 1
-
+#include <cassert>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <boost/program_options.hpp>
-#include <cassert>
-//property tree
-
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <exception>
 #include <algorithm>
 #include <utility>
-
-
-//write output
-#include <boost/format.hpp>
 #include <iomanip>
 #include <filesystem>
+#include <tuple>
+
+
+
+
+#include <boost/program_options.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/format.hpp>
 
 
 struct param_vals{
@@ -33,6 +31,8 @@ struct param_vals{
   void write_pop_run(std::ofstream &o, int id, double time, double up, double down);
   void write_stats_header(std::ofstream &o);
   void write_stats(std::ofstream &o, int id, double time, int config_space, std::vector<int> exceeded);
+  void write_mode_pop_header(std::ofstream &o);
+  void write_mode_pop(std::ofstream &o,int id, double time,std::array<std::tuple<int,double,double>,NUM_MODES> mode_lbl_quanta_pop);
   //  void wrie_populations(ofstream &o);
 
   
