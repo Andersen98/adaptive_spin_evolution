@@ -12,10 +12,10 @@ def generate_and_submit(doRun):
     #Run Info
     prefix_code = "/home/ethan/curr_proj/run_output/"
     executable = "/home/ethan/curr_proj/adaptive_spin"
-    run_id=1428
+    run_id=1429
     
     #Run Info (system count)
-    num_modes = 1000
+    num_modes = 400 
     max_occupation = 15
 
     #Energy Paths
@@ -25,15 +25,15 @@ def generate_and_submit(doRun):
     
     #Energy Params
     remake_energies = False
-    w0 = 1
-    g0 = 10
-    v0 = 1
-    cutoff = .00001
-    spectral_energy = 1
+    w0 = 3
+    g0 = .2
+    v0 = 3
+    cutoff = .0000010
+    spectral_energy = 2
 
     #Time Params
-    dt = .001
-    tf =2000*dt
+    dt = .0005
+    tf =3*dt
     
     #=================================================================#
     #                      Make Energies                               #
@@ -95,7 +95,12 @@ def generate_and_submit(doRun):
     #                         End Section                             #
     #=================================================================#
 
-    
+    outStr = ""
+    for x in argList:
+        outStr += x + " "
+
+    print( outStr)
+
 
     #=================================================================#
     #                    Run Instance of C++ Code                     #
@@ -106,12 +111,7 @@ def generate_and_submit(doRun):
 
     #                         End Section                             #
     #=================================================================#
-    outStr = ""
-    for x in argList:
-        outStr += x + " "
-
-    print( outStr)
-
+    
     return(arguments,w,g,w0)
  
 def p_excited_strong(t,K,G,D,g0):
@@ -178,9 +178,9 @@ if __name__=='__main__':
         up = data_list[:,1]
         tx = np.linspace(0,t[-1],100)
         print(data_list)
-        print(p_excited(tx,w,g,w0))
-        plt.semilogy(tx,p_excited(tx,w,g,w0),label="Theory:~exp(-omega_0^3 t")
-        plt.semilogy(t,up,label="Code")
+
+#        plt.semilogy(tx,p_excited(tx,w,g,w0),label="Theory:~exp(-omega_0^3 t")
+        plt.plot(t,up,label="Code")
         plt.grid()
         plt.legend()
         ax.set(xlabel=xLbl,ylabel=yLbl,title=title)

@@ -1,6 +1,6 @@
 objects = main.o input_tools.o
-flags = -std=c++17 -g 
-dflags = -DNUM_MODES=1000 -DNUM_BITS=4
+flags = -std=c++17 -g -O0
+dflags = -DNUM_MODES=400 -DNUM_BITS=4
 
 #-Wl,-t
 adaptive_spin: ${objects}

@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <bitset>
 #include <algorithm>
@@ -86,7 +85,7 @@ int main(int argc, char * argv[]){
       params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
       params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
       //params.write_mode_pop(of_mode,i+1,i*dt,h.get_modeLbl_quanta_pop());
-      h.run(dt);
+      h.run_step(dt);
     }
   }
   
