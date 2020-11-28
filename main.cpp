@@ -8,7 +8,6 @@
 #include <utility>
 #include <string>
 #include <tuple>
-
 #include "configuration.hpp"
 #include "input_tools.hpp"
 
@@ -45,7 +44,6 @@ int main(int argc, char * argv[]){
 
  
   Spin_Params spin_params;
-  spin_params.energy = params.atom_levels[1];
 
   //Complex Number Tools
   //also typedefs
@@ -55,28 +53,21 @@ int main(int argc, char * argv[]){
   typedef vector<state_ket> state_vector;
   typedef vector<double>::iterator Iter_m; //mode iterator
   typedef vector<double>::iterator Iter_c; //coupling iterator
-  //setup initial conditions
-  state_vector initial_state(1);
-  initial_state[0].amp = 1;
-  initial_state[0].spin = true;
   
   
   //make hamiltonian
-  hamiltonian<NUM_MODES,NUM_BITS> h(initial_state,params);
+  hamiltonian<NUM_MODES,NUM_BITS> h(params);
   
 
   //setup output stream
-  string info_file = params.output_directory+to_string(params.run_id)+".info";
   string output_file = params.output_directory+to_string(params.run_id)+".out";
   string stats_file = params.output_directory+to_string(params.run_id)+".stats";
   string mode_file = params.output_directory+to_string(params.run_id)+".modes";
   std::ofstream of(output_file.c_str());
   std::ofstream of_stats(stats_file.c_str());
-  std::ofstream of_info(info_file.c_str());
   std::ofstream of_mode(mode_file.c_str());
   vector<int> exceeded(0);
-  if(of&& of_stats&&of_info){
-    params.save(of_info);
+  if(of&& of_stats){
     params.write_header(of);
     params.write_stats_header(of_stats);
     params.write_mode_pop_header(of_mode);
@@ -90,7 +81,6 @@ int main(int argc, char * argv[]){
   }
   
   of.close();
-  of_info.close();
   of_stats.close();
   of_mode.close();
   

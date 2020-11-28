@@ -59,17 +59,38 @@ class hamiltonian{
   
 public:
   
-  hamiltonian(state_vector initial_state ,
-	      const param_vals &params_):g{{0}},m{0},params(params_),num_levels(1<<num_bits),psi_lbl(initial_state),psi_amp(initial_state){
+  hamiltonian(const param_vals &params_):g{{0}},m{0},params(params_),num_levels(1<<num_bits),psi_lbl(0),psi_amp(0){
 
-    
+       
     vector<pair<int,double>> idx_g_pairs(num_modes);
+    vector<int> old2new (num_modes);
     for(int i=0;i< num_modes;i++){
       idx_g_pairs[i] = std::make_pair(i,params.mode_couplings[i]);
     }
     
     sort(idx_g_pairs.begin(),idx_g_pairs.end(),[](auto &it1,auto &it2){return it1.second > it2.second;});
 
+    //map from old idx to new idx
+    for(int i = 0; i < num_modes; i++){
+      int j =  idx_g_pairs[i].first;
+      old2new[j] = i;
+    }
+    
+    //construct initial states
+    for(auto &sk: params.initial_state){
+      int mode = old2new[sk.mode];
+      state_ket k;
+      k.set_mode(mode,sk.n);
+      k.spin = sk.spin;
+      k.amp = sk.amp;
+      k.hist = 'I';
+      psi_lbl.push_back(k);
+    }
+    normalize_state(psi_lbl);
+    sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
+    psi_amp.resize(psi_lbl.size());
+    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+    sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return abs_sqrd(it1) > abs_sqrd(it2);});
     for(int j = 0; j < num_modes; j++){
 	int i = idx_g_pairs[j].first;
 	double gi = idx_g_pairs[j].second;
@@ -169,7 +190,8 @@ public:
 	if( (params.energy_cutoff < premagnitude*g[level+1][j] ) ){
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
-	  psi_delta.back().amp = 0;
+	  psi_delta.back().hist = 'r';
+	  psi_delta.back().hist_mode = j;
 	  psi_delta.back().increment_mode(j);
 	}
 	break;
@@ -178,24 +200,28 @@ public:
 	if(params.energy_cutoff < premagnitude*g[level][j]){
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
-	  psi_delta.back().amp = 0;
+	  psi_delta.back().hist = 'l';
+	  psi_delta.back().hist_mode = j;
 	  psi_delta.back().decrement_mode(j);
 	}
 	break;
       default:
-
-	//raise
-	if(params.energy_cutoff < premagnitude*g[level+1][j]){
+	
+	bool should_raise = params.energy_cutoff < premagnitude*g[level+1][j];
+	bool should_lower = params.energy_cutoff < premagnitude*g[level][j];
+	
+	if(should_raise && should_lower ){
+	  //raise
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
-	  psi_delta.back().amp = 0;
+	  psi_delta.back().hist = 'B';
+	  psi_delta.back().hist_mode = j;
 	  psi_delta.back().increment_mode(j);
-	}
-	//lower
-	if(params.energy_cutoff < premagnitude*g[level][j]){
+	  //lower
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
-	  psi_delta.back().amp = 0;
+	  psi_delta.back().hist = 'b';
+	  psi_delta.back().hist_mode = j;
 	  psi_delta.back().decrement_mode(j);
 	}
 	break;
@@ -212,8 +238,31 @@ public:
   void evolve_current_space(double dt){
     vector<complex<double>> delta(psi_amp.size(),complex<double>(0,0));
     std::pair<state_vector_iterator,state_vector_iterator> psi_el;
+    complex<double> prefactor = complex<double>(0,-1)*dt;
     for(int i = 0; i < psi_amp.size(); i++){
-      complex<double> prefactor = complex<double>(0,-1)*dt*psi_amp[i].amp;
+
+      //for each child find parent and apply apply operation to child
+      
+      state_ket parent_ket = psi_amp[i];
+      if(parent_ket.hist =="B"){
+	int mode = parent_ket.hist_mode;
+	parent_ket.decrement_mode(mode);
+	
+	psi_el = std::equal_range(psi_amp.begin(),psi_amp.end(), parent_ket,
+				[](auto &el, auto &val){return el < val; });
+      
+	if(psi_el.first != psi_el.second){
+	  assert(std::distance(psi_el.first,psi_el.second) ==1);
+	  int idx = std::distance(psi_amp.begin(),psi_el.first);
+	  //diagonal term for parent added if B or r
+	  delta[idx] += prefactor*g[parent_ket.hist_mode][parent_ket.get_mode(parent_ket.
+	}
+      }else if(parent_ket.hist == 'b'){
+
+
+      }
+
+      
     
       
       for(int j = 0; j < num_modes; j++){
@@ -306,28 +355,38 @@ public:
   }
     
   void union_and_evolve(double dt){
-    //==============set_union====================
-    /*USAGE
-      template< class InputIt1, class InputIt2, class OutputIt >
-      OutputIt set_union( InputIt1 first1, InputIt1 last1,InputIt2 first2, InputIt2 last2,
-                    OutputIt d_first );
-      **DESCRIPTION
-      Constructs a sorted union beginning at d_first consisting of the set of elements present 
-      in one or both sorted ranges [first1, last1) and [first2, last2). 
-      **RETURNS
-      Iterator past the end of the constructed range. 
-     */
-    typename state_vector::iterator psi_el;
-    psi_amp.resize(psi_delta.size()+psi_lbl.size());
-    typename std::set<state_ket> s(psi_delta.begin(),psi_delta.end());
-    psi_delta.assign(s.begin(),s.end());
-    sort(psi_delta.begin(),psi_delta.end(),[](auto &it1, auto &it2){return it1 < it2; });
+    if(psi_delta.size()>0){
+      //==============set_union====================
+      /*USAGE
+	template< class InputIt1, class InputIt2, class OutputIt >
+	OutputIt set_union( InputIt1 first1, InputIt1 last1,InputIt2 first2, InputIt2 last2,
+	                       OutputIt d_first );
+	**DESCRIPTION
+	Constructs a sorted union beginning at d_first consisting of the set of elements present 
+	in one or both sorted ranges [first1, last1) and [first2, last2). 
+	**RETURNS
+	Iterator past the end of the constructed range. 
+      */
+      typename state_vector::iterator psi_el;
+
     
-    psi_el = std::set_union(psi_lbl.begin(),psi_lbl.end(),psi_delta.begin(),psi_delta.end(),
-			    psi_amp.begin(),[](auto &it1, auto &it2){return it1 < it2; });
+      sort(psi_delta.begin(),psi_delta.end(),[](auto &it1, auto &it2){return it1 < it2; });
+      //dedupe
+      vector<state_ket> delta_clean(psi_delta.size());
+      delta_clean[0] = psi_delta[0];
+      int j = 1;
+      for(int i = 0; i < psi_delta.size(); i++){
+	if(delta_clean[j-1] < psi_delta[i]){
+	  delta_clean[j++] = psi_delta[i];
+	}	
+      }
+      psi_amp.resize(delta_clean.size()+psi_lbl.size());    
+      psi_el = std::set_union(psi_lbl.begin(),psi_lbl.end(),delta_clean.begin(),delta_clean.end(),
+			      psi_amp.begin(),[](auto &it1, auto &it2){return it1 < it2; });
     
-    int amp_size = std::distance(psi_amp.begin(),psi_el);
-    psi_amp.resize(amp_size);
+      int amp_size = std::distance(psi_amp.begin(),psi_el);
+      psi_amp.resize(amp_size);
+    }
 
     //evolves psi_amp
     evolve_current_space(dt);
@@ -413,6 +472,7 @@ public:
     psi_delta.clear();
     psi_delta.reserve(num_modes*psi_amp.size());
 
+    /*
     bool stop = false;
     for(int i = 0; i < psi_amp.size(); i++){
       stop = grow_configuration_space(i);
@@ -421,7 +481,7 @@ public:
 	
       }
     }
-
+    */
     union_and_evolve(dt);
     
   }  

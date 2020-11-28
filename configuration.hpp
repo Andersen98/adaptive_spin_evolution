@@ -219,7 +219,7 @@ public:
 
   State_Ket():spin(false),amp(0){}
   //copy constructor
-  State_Ket(const State_Ket&c ):spin(c.spin),amp(c.amp),lbl(c.lbl){}
+  State_Ket(const State_Ket&c ):spin(c.spin),amp(c.amp),lbl(c.lbl),hist('0'),hist_mode(0){}
   
   typedef Amplitude amplitude_type;
   typedef partial_config<num_modes,num_bits> Label;
@@ -228,6 +228,8 @@ public:
   Spin_Type spin;
   Amplitude amp;
   Label lbl;
+  char hist;
+  short int hist_mode;
   
   constexpr static int  num_modes_int = num_modes;
   constexpr static int max_level_int = 1<<num_bits -1;
@@ -269,6 +271,8 @@ public:
     amp = c.amp;
     lbl = c.lbl;
     spin = c.spin;
+    hist = c.hist;
+    hist_mode = c.hist_mode;
   }
   void set_mode(int mode,long unsigned level){
     lbl.set_mode(mode,level);

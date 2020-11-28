@@ -2,6 +2,7 @@
 
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
+namespace rj = rapidjson;
 using boost::format;
 using namespace std;
 using boost::io::group;
@@ -18,7 +19,6 @@ void param_vals::save(std::ofstream &o){
   tree.put("energy_cutoff",energy_cutoff);
   tree.put("t0",t0);
   tree.put("tf",tf);
-  tree.put("energy_unit",energy_unit);
   tree.put("bits_per_mode",NUM_BITS );
   tree.put("dt", dt);
 
@@ -29,9 +29,7 @@ void param_vals::save(std::ofstream &o){
   tree.put("cavity_mode.energy",mode_energies[max_idx]);
   tree.put("cavity_mode.couplings",mode_couplings[max_idx]);
     
-  for_each(atom_levels.begin(),atom_levels.end(),
-	   [&](double j){tree.add("atom_params.energy_level",j);});
-
+  
   pt::ptree mode_values;
   for(int i = 0; i < mode_energies.size(); i++){
     pt::ptree child;
@@ -45,7 +43,7 @@ void param_vals::save(std::ofstream &o){
   mode_info.put("strongly_coupled", 1);
   mode_info.put("weakly_coupled", mode_energies.size()-1);
   mode_info.put("spectral_density", "random_uniform");
-  mode_info.put("spectral_energy", spectral_energy);
+  mode_info.put("energy_spectral_density", energy_spectral_density);
   tree.add_child("modes.mode_info",mode_info);
   tree.add_child("modes.mode_values",mode_values);
  
@@ -121,6 +119,72 @@ void param_vals::write_stats(std::ofstream &o, int id, double time,
 }
 
 
+bool param_vals::load_json(std::ifstream &ifs){
+  initial_state.clear();
+
+  bool result = false;
+  rj::IStreamWrapper isw(ifs);
+
+  rj::Document d;
+  d.ParseStream(isw);
+  //run info
+  const rj::Value &ri = d["run_info"];
+  run_id = ri["run_id"].GetInt();
+  assert(NUM_MODES==ri["num_modes"].GetInt());
+  output_directory = ri["system_paths"]["code_output_dir"].GetString();
+  //time info
+  const rj::Value &t = d["time_params"];
+  t0 = 0;
+  tf = t["tf"].GetDouble();
+  dt = t["dt"].GetDouble();
+  N = tf/dt;
+  //initial_state
+  const rj::Value &psi = d["initial_state"];
+  assert(psi.IsArray());
+  for(rj::SizeType i = 0; i < psi.Size(); i++){
+    complex<double> amp(psi[i]["re"].GetDouble(),psi[i]["im"].GetDouble());
+    bool spin = psi[i]["spin"].GetBool();
+    int mode_idx = psi[i]["idx"].GetInt();
+    int n = psi[i]["n"].GetInt();
+
+    simple_ket k;
+    k.amp = amp;
+    k.spin = spin;
+    k.mode = mode_idx;
+    k.n = n;
+    initial_state.push_back(k);
+  }
+
+  //----------energy---------
+  //#energy cutoff
+  const rj::Value &en = d["energy_info"];
+  energy_cutoff = en["params"]["cutoff"].GetDouble();
+  energy_spectral_density = en["params"]["energy_spectral_density"].GetDouble();
+  //#emitter energy
+  up_energy = en["energies"]["emitter"]["up"].GetDouble();
+  down_energy = en["energies"]["emitter"]["down"].GetDouble();
+  //#mode energies
+  const rj::Value &m = en["energies"]["modes"];
+  assert(m.IsArray());
+  assert(m.Size() == NUM_MODES);
+  mode_energies.clear();
+  mode_energies.resize(NUM_MODES);
+  mode_couplings.clear();
+  mode_couplings.resize(NUM_MODES);
+  for(rj::SizeType i = 0; i < m.Size(); i ++){
+    mode_energies[i] = m[i]["w"].GetDouble();
+    mode_couplings[i] = m[i]["g"].GetDouble();
+  }
+  ifs.close();
+  
+  
+  return(result);
+
+}
+
+
+		
+
 //returns exit status
 //if exit status is true, end the program
 //if exit status is false, continue with the calculation
@@ -134,6 +198,8 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     ("config_file", po::value<string>(&conf.config_file_path), "Path to configuration file. Specify to use configuration file")
     ("print_inputs,P", "print the input values that will be used for calculation")
     ("verbose,v", "Print much more information." )
+    ("json_file,j",po::value<string>(&conf.json_path),
+     "Path to json file. Load parameters from json file, ignoring parameters from command line")
     ;
   
   po::options_description run_information("Run Information");
@@ -148,9 +214,7 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
 
   po::options_description energy_parameters("Energy Parameters");
   energy_parameters.add_options()
-    ("cutoff", po::value<double>(&conf.energy_cutoff)->default_value(0.01),"Energy cutoff for |c_i * H_{ij}|, where c_i is the apmlitude of the ith configuration and H_{ij} is the transition matrix element from the ith configuration to the kth configuration.")
-    ("energy_unit, u",po::value<double>(&conf.energy_unit)->default_value(1),"Energy scaling applied to the inputs. Atom and mode energies are divided by this number");
-  
+    ("cutoff", po::value<double>(&conf.energy_cutoff)->default_value(0.01),"Energy cutoff for |c_i * H_{ij}|, where c_i is the apmlitude of the ith configuration and H_{ij} is the transition matrix element from the ith configuration to the kth configuration.");
 
 
   po::options_description time_parameters("Time Parameters");
@@ -199,9 +263,26 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       return true;
     }
   }
-  
+
+  if(vm.count("json_file")){
+    if(vm.count("verbose")){
+      cout << "Attempting to load json configuration at: " << conf.json_path <<endl;
+    }
+    ifstream ifs(conf.json_path.c_str());
+    if(!ifs){
+      cerr << "Cannot open json file at " << conf.json_path <<endl;
+      cerr << "Aborting run" << endl;
+      return true;
+    }
+    else{
+      bool failure = conf.load_json(ifs);
+      return failure;
+    }
+
+  }
  
   //read in data for modes and couplings and atomic energies
+  vector<double> atom_energies(0);
   if(vm.count("verbose")){
     cout << "Attempting to load emitter parameters at: " << conf.atom_path <<endl;
   }
@@ -216,15 +297,16 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
       cout << "Success\n";
     }
     for(double i; ifs >> i;){
-      conf.atom_levels.push_back(i);
-      //cout << conf.atom_levels.back();
+      atom_energies.push_back(i);
+
     }
   }
   ifs.close();
 
   //set up and down energy
-  conf.up_energy = .5*conf.atom_levels[1];
-  conf.down_energy = -.5*conf.atom_levels[1];
+  conf.up_energy = atom_energies[0];
+  conf.down_energy = atom_energies[1];
+
 
   if(vm.count("verbose")){
     cout << "Attempting to load mode parameters at: " << conf.mode_path <<endl;
@@ -264,7 +346,6 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     cout << "spin up energy: " << conf.up_energy <<endl;
     cout << "spin down energy: " << conf.down_energy <<endl;
     cout <<  "cutoff: " << conf.energy_cutoff << endl;
-    cout <<  "energy_unit: " << conf.energy_unit << endl;
     cout << "t0: " << conf.t0 << endl;
     cout << "tf: " << conf.tf << endl;
     cout << "dt: " << conf.dt << endl;
