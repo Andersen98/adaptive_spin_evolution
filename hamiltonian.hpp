@@ -11,8 +11,6 @@
 #include <cmath>
 #include <iterator>
 #include <tuple>
-#include <boost/graph/adj_list.hpp>
-#include <boost/graph/properties.hpp>
 
 #include "input_tools.hpp"
 #include "configuration.hpp"
@@ -28,7 +26,7 @@ using std::pair;
 using std::vector;
 using std::array;
 using std::tuple;
-using std::list;
+
 
 //algorithms
 using std::sort;
@@ -52,7 +50,7 @@ class hamiltonian{
   param_vals params;
   vector<int> mode_cap_exceeded;
   const int num_levels;
- 
+  const complex<double> one_i;
       
   state_vector psi_delta; //non-sorted (new terms added each step)
   state_vector psi_lbl; //label sorted
@@ -60,18 +58,13 @@ class hamiltonian{
 
   //keeps track of index
   int next_idx;
-  struct edge_mode{
-    int out_edge_idx;
+  struct dir_edge_mode{
+    int out_idx;
     int connection_mode;
-  }
-  struct out_edges{
-    int start_idx;
-    vector<edge_mode> edges;
-    out_edges():start_idx(0),edge_mode(){}
-    //edge_mode.first = idx
-    //edge_mode.second = mode (negative is lowered, positive is raised)
+    bool raised;
   };
-  list<out_edges> state_connections;
+    
+  vector<vector<dir_edge_mode>> state_connections;
 
   struct ket_pair{
     state_ket raised;
@@ -79,16 +72,15 @@ class hamiltonian{
     ket_pair(){}
     ket_pair(const state_ket &k){
       raised = k;
-      lowerd = k;
-    }
-    
+      lowered = k;
+    } 
     
   };
   
   
 public:
   
-  hamiltonian(const param_vals &params_):g{{0}},m{0},params(params_),num_levels(1<<num_bits),psi_lbl(0),psi_amp(0),next_idx(0),state_connections(){
+  hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},params(params_),num_levels(1<<num_bits),psi_lbl(0),psi_amp(0),next_idx(0),state_connections(){
 
        
     vector<pair<int,double>> idx_g_pairs(num_modes);
@@ -104,25 +96,7 @@ public:
       int j =  idx_g_pairs[i].first;
       old2new[j] = i;
     }
-    
-    //construct initial states
-    for(auto &sk: params.initial_state){
-      int mode = old2new[sk.mode];
-      state_ket k;
-      k.set_mode(mode,sk.n);
-      k.spin = sk.spin;
-      k.amp = sk.amp;
-      k.idx = next_idx++;
-      psi_lbl.push_back(k);
-    }
 
-    append_connections(psi_lbl);
-    
-    normalize_state(psi_lbl);
-    sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
-    psi_amp.resize(psi_lbl.size());
-    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-    sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return abs_sqrd(it1) > abs_sqrd(it2);});
     for(int j = 0; j < num_modes; j++){
 	int i = idx_g_pairs[j].first;
 	double gi = idx_g_pairs[j].second;
@@ -140,6 +114,31 @@ public:
 	//DEnd
     }
 
+    //construct initial states
+    for(auto &sk: params.initial_state){
+      int mode = old2new[sk.mode];
+      state_ket k;
+      k.set_mode(mode,sk.n);
+      k.spin = sk.spin;
+      k.amp = sk.amp;
+      psi_delta.push_back(k);
+    }
+
+    //start with a single root state.
+    sort(psi_delta.begin(),psi_delta.end(),[](auto &it1,auto &it2){return it1<it2;});
+    psi_lbl.push_back(psi_delta[0]);
+    psi_lbl[0].idx = next_idx++;
+
+    
+    //do a run for zero seconds
+    union_and_evolve(0);
+    
+    normalize_state(psi_lbl);
+    sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
+    psi_amp.resize(psi_lbl.size());
+    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+    sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return abs_sqrd(it1) > abs_sqrd(it2);});
+    
     
   }
   
@@ -259,103 +258,48 @@ public:
 
   }
 
-  void update_connections(){
-    
-
-  }
+  
   void evolve_current_space(double dt){
-    vector<complex<double>> delta(psi_amp.size(),complex<double>(0,0));
-    std::pair<state_vector_iterator,state_vector_iterator> psi_el;
-    complex<double> prefactor = complex<double>(0,-1)*dt;
+
+    //sort by label
+
+    vector<int> con2amp(psi_amp.size());
     for(int i = 0; i < psi_amp.size(); i++){
-         
-      
-      for(int j = 0; j < num_modes; j++){
-	
-	int level = psi_amp[i].get_mode(j);
-	
-	//~~~~~Main std algorithm used ~~~~~~~~~~
-	//For each mode in each ket, I attempt to evolve it in time within the current configuration
-	//space. I think this could be optimized furthur, but right now I just want to see if it is sensible.
-	
-	//====lower bound (binary search)========
-	/* ~~~~~~USAGE~~~~~~~~~~~~
-	  ForwardIt lower_bound( ForwardIt first, ForwardIt last, const T& value );
-	  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	  ~~~~~~~~~~~DESCRIPTION~~~~~~~~~~~~~~~~~~
-	  Returns an iterator pointing to the first element in the range [first, last) 
-	  that is not less than (i.e. greater or equal to) value, or last if no such 
-	  element is found.
-	  
-	  RETURNS: Iterator pointing to the first element that is not less than value, 
-	  or last if no such element is found. 
-	*/
-
-	//~~~~~~Copy current ket to new ket
-	state_ket new_ket = psi_amp[i];
-	
-	//~~~~~~Diagonal term E_atom + E_field~~~~~~~~~
-	delta[i] += prefactor*(new_ket.spin ? params.up_energy:params.down_energy);
-	delta[i] += prefactor*m[j]*double(level);
-     
-	//find if psi_amp has new_ket (first raised then lowered)
-	switch(level){
-	case(0):
-	  //~~~~~~raise ket~~~~~~
-	  new_ket.increment_mode(j);
-	  new_ket.spin = !new_ket.spin;
-	  psi_el = std::equal_range(psi_amp.begin(),psi_amp.end(), new_ket,
-				    [](auto &el, auto &val){return el < val; });
-
-	  if(psi_el.first != psi_el.second){
-	    assert(std::distance(psi_el.first,psi_el.second) ==1);
-	    int idx = std::distance(psi_amp.begin(),psi_el.first);
-	    delta[idx] += prefactor*g[level+1][j];
-	  }
-	  break;
-	case( (1<<num_bits) -1):
-	  //~~~~~~~lower ket~~~~~~~~
-	  new_ket.decrement_mode(j);
-	  new_ket.spin = !new_ket.spin;
-	  psi_el = std::equal_range(psi_amp.begin(),psi_amp.end(),new_ket,
-				    [](auto &el, auto &val){return el < val; });
-	  if(psi_el.first != psi_el.second){
-	    int idx = std::distance(psi_amp.begin(),psi_el.first);
-	    delta[idx] += prefactor*g[level][j];
-	  }
-	  break;  
-	  
-	default:
-	  //~~~~~~~raise ket~~~~~~~~~~
-	  new_ket.increment_mode(j);
-	  new_ket.spin = !new_ket.spin;
-	  psi_el = std::equal_range(psi_amp.begin(),psi_amp.end(),new_ket,
-				    [](auto &el, auto &val){return el < val; });
-	  if(psi_el.first != psi_el.second){
-	    int idx = std::distance(psi_amp.begin(),psi_el.first);
-	    delta[idx] += prefactor*g[level+1][j];
-	  }
-	  //~~~~~~~~lower ket~~~~~~~~~~~
-	  new_ket.decrement_mode(j);
-	  new_ket.decrement_mode(j);
-     
-	  psi_el = std::equal_range(psi_amp.begin(),psi_amp.end(),new_ket,
-				    [](auto &el, auto &val){return el < val; });
-	  if(psi_el.first != psi_el.second){
-	    int idx = std::distance(psi_amp.begin(),psi_el.first);
-	    delta[idx] += prefactor*g[level][j];
-	  }
-	  break;
-	}//end switch
-      
-      }//end mode loop
-    }//ket loop
-
-    //add delta to amp
-    for(int i =0; i < psi_amp.size(); i++){
-      psi_amp[i].amp += delta[i];
+      //con -> ampidx
+      con2amp[psi_amp[i].idx] = i;
     }
-    
+    vector<complex<double>> delta(psi_amp.size());
+
+    for(int i = 0; i < next_idx; i ++){
+      complex<double> start_amp = psi_amp[con2amp[i]].amp;
+      //diagonal term
+      //--atom energy
+      delta[i] += start_amp*complex<double>(0,-1)*dt*(psi_amp[con2amp[i]].spin? params.up_energy:params.down_energy);
+
+      assert(i==psi_amp[con2amp[i]].idx);
+      for(auto & edge:state_connections[i]){
+	int out_idx = edge.out_idx;
+	complex<double> out_amp = psi_amp[con2amp[out_idx]].amp;
+	int connection_mode = edge.connection_mode;
+	int start_level = psi_amp[con2amp[i]].get_mode(connection_mode);
+	bool raised =  edge.raised;
+	//start -> finish
+	double g_factor = raised?(g[start_level+1][connection_mode]):(g[start_level][connection_mode]);
+	delta[out_idx] += start_amp*complex<double>(0,-1)*dt*g_factor;
+	//diagonal term
+	delta[i] += start_amp*complex<double>(0,-1)*dt*double(start_level)*m[connection_mode];
+
+	//finish->start
+	delta[i] += out_amp*complex<double>(0,-1)*dt*g_factor;
+
+      }
+    }
+
+
+    for(int i = 0; i < psi_amp.size(); i++){
+      psi_amp[con2amp[i]].amp += delta[i];
+      
+    }
 
   }
 
@@ -397,7 +341,7 @@ public:
 
      }//end switch
 
-    return ket_pair;
+    return kp;
 
   }
 
@@ -405,20 +349,69 @@ public:
     std::pair<state_vector_iterator,state_vector_iterator> psi_el;
     int result = -1; //if it fails, the result is -1;
     psi_el = std::equal_range(psi_lbl.begin(),psi_lbl.end(),k,
-			      [](){;});
+			      [](auto &el,auto &val){return el < val;});
 
     if(psi_el.first != psi_el.second){
       result = std::distance(psi_lbl.begin(),psi_el.first);
     }
+
+    return(result);
+  }
+
+  void setup_connections(state_vector &psi){
+
+    for(auto &k:psi){
+      k.idx = next_idx++;
+    }
+
+     
+    for(auto &k: psi){
+      vector<dir_edge_mode> edges;
+              
+      //apply hamiltonian
+      for(int i = 0; i < num_modes; i++){
+	
+	ket_pair kp = get_connected_states(k,i);
+	bool raised = kp.raised.idx==state_ket::empty_idx;
+	bool lowered = kp.lowered.idx==state_ket::empty_idx;
+	 
+	if(raised){
+	  //look for an instance
+	  int vec_idx = binary_search_lbl(kp.raised);
+	  if(vec_idx>0){
+	    dir_edge_mode em;
+	    em.out_idx = psi_lbl[vec_idx].idx;
+	    em.connection_mode = i;
+	    em.raised = true;
+	    edges.push_back(em);
+	  }
+	  
+	}
+	if(lowered){
+	  int vec_idx = binary_search_lbl(kp.lowered);
+	  if(vec_idx){
+	    dir_edge_mode em;
+	    em.out_idx = psi_lbl[vec_idx].idx;
+	    em.connection_mode = i;
+	    em.raised = false;
+	    edges.push_back(em); 
+	  }
+	}
+	
+      }//end mode loop
+      
+      state_connections.push_back(edges);
+      
+    }//end k loop
     
   }
-  void append_connections(const state_vector &delta){
+  void append_connections(state_vector &delta){
 
    
     
-     for(const auto &k: delta){
-       out_edges idx_edge_vec;
-       idx_edge_vec.start_idx = k.idx;
+     for(auto &k: delta){
+       vector<dir_edge_mode> edges;
+       k.idx = next_idx++;
        
        //apply hamiltonian
        for(int i = 0; i < num_modes; i++){
@@ -431,26 +424,28 @@ public:
 	   //look for an instance
 	   int vec_idx = binary_search_lbl(kp.raised);
 	   if(vec_idx>0){
-	     edge_mode em;
-	     em.out_edge_idx = psi_lbl[vec_idx].idx;
+	     dir_edge_mode em;
+	     em.out_idx = psi_lbl[vec_idx].idx;
 	     em.connection_mode = i;
-	     idx_edge_vec.edges.push_back(em);
+	     em.raised = true;
+	     edges.push_back(em);
 	   }
 
 	 }
 	 if(lowered){
 	   int vec_idx = binary_search_lbl(kp.lowered);
 	   if(vec_idx){
-	     edge_mode em;
-	     em.out_edge_idx = psi_lbl[vec_idx].idx;
+	     dir_edge_mode em;
+	     em.out_idx = psi_lbl[vec_idx].idx;
 	     em.connection_mode = i;
-	     idx_edge_vec.edges.push_back(em); 
+	     em.raised = false;
+	     edges.push_back(em); 
 	   }
 	 }
 
        }//end mode loop
 
-       state_connections.push_back(idx_edge_vec);
+       state_connections.push_back(edges);
        
      }//end k loop
   }
@@ -476,24 +471,26 @@ public:
     
       sort(psi_delta.begin(),psi_delta.end(),[](auto &it1, auto &it2){return it1 < it2; });
       //dedupe
-      vector<state_ket&> delta_clean(psi_delta.size());
+      vector<state_ket> delta_clean(psi_delta.size());
       delta_clean[0] = psi_delta[0];
       int j = 1;
       for(int i = 1; i < psi_delta.size(); i++){
 	if(delta_clean[j-1] < psi_delta[i]){
 	  delta_clean[j] = psi_delta[i];
-	  delta_clean[j++].idx = next_idx++;
 	}	
       }
-      //j is now the size of delta_clean
+      //RESIZE DELTA CLEAN BEFORE DOING ANYTHING ELSE!
       int delta_clean_size = j;
       delta_clean.resize(delta_clean_size);
+
+      
+      //append new connections before merge
+      append_connections(delta_clean);
+
+      //merge into psi_lbl
       psi_amp.resize(delta_clean.size()+psi_lbl.size());    
       psi_el = std::set_union(psi_lbl.begin(),psi_lbl.end(),delta_clean.begin(),delta_clean.end(),
 			      psi_amp.begin(),[](auto &it1, auto &it2){return it1 < it2; });
-
-      //append new connections
-      
       
     }//endif delta_size.()
     

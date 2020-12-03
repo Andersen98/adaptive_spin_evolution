@@ -276,7 +276,7 @@ public:
   void set_mode(int mode,long unsigned level){
     lbl.set_mode(mode,level);
   }
-  int get_mode(int mode){
+  int get_mode(int mode) const{
     return lbl.get_mode(mode);
   }
   void increment_mode(int mode){
