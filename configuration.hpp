@@ -217,9 +217,9 @@ class State_Ket{
   friend std::ostream& operator<<( std::ostream&, const State_Ket<sp,ap,num_modes_,num_bits>& p );
 public:
 
-  State_Ket():idx(empty_idx),spin(false),amp(0){}
+  State_Ket():idx(empty_idx),spin(false),amp(0.0),lbl(){}
   //copy constructor
-  State_Ket(const State_Ket&c ):idx(empty_idx),spin(c.spin),amp(c.amp),lbl(c.lbl){}
+  State_Ket(const State_Ket&c ):idx(c.idx),spin(c.spin),amp(c.amp),lbl(c.lbl){}
   
   typedef Amplitude amplitude_type;
   typedef partial_config<num_modes,num_bits> Label;
@@ -267,11 +267,12 @@ public:
   bool operator==(const State_Ket &c)const{
     return( (spin== c.spin)&& (lbl == c.lbl));
   }
-  //DOES NOT COPY this.idx
+
   void operator=(const State_Ket &c){
     amp = c.amp;
     lbl = c.lbl;
     spin = c.spin;
+    idx = c.idx;
   }
   void set_mode(int mode,long unsigned level){
     lbl.set_mode(mode,level);

@@ -11,24 +11,24 @@ if __name__=='__main__':
     
 
     params = {
-        "run_info":{"run_id":1429,"num_modes":1,"system_paths":
-                    {"code_output_dir":"/home/ethan/research/code/run_output/1429/",
-                     "excecutable":"/home/ethan/research/code/adaptive_spin",
+        "run_info":{"run_id":1429,"num_modes":100,"system_paths":
+                    {"code_output_dir":"/home/ethan/Documents/research/code/adaptive_spin_evolution/run_output/1429/",
+                     "excecutable":"/home/ethan/Documents/research/code/adaptive_spin_evolution/adaptive_spin",
                      }
                     },
-        "time_params":{"dt":.001,"tf":5},
+        "time_params":{"dt":.01,"tf":30},
 
     "initial_state":
-        [{"re":1,"im":0,"spin":True,"idx":0,"n":0},
-         {"re":.2,"im":0,"spin":False,"idx":0,"n":1}],
+        [{"re":.5,"im":0,"spin":True,"idx":0,"n":0},
+         {"re":.5,"im":0,"spin":False,"idx":0,"n":1}],
 
         "energy_info":{
             "params":{
-            "cutoff":.00000000001,
-                "w0":2,
-                "g0":4,
-                "v0":2,
-                "energy_spectral_density":0
+            "cutoff":.0001,
+                "w0":6,
+                "g0":3,
+                "v0":6,
+                "energy_spectral_density":1
             },
           
         }

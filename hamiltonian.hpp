@@ -126,19 +126,71 @@ public:
 
     //start with a single root state.
     sort(psi_delta.begin(),psi_delta.end(),[](auto &it1,auto &it2){return it1<it2;});
-    psi_lbl.push_back(psi_delta[0]);
-    psi_lbl[0].idx = next_idx++;
+    state_ket k = psi_delta[0];
+    psi_lbl.push_back(k);
+    //delete psi_delta[0]
+    psi_delta.erase(psi_delta.begin());
 
-    
-    //do a run for zero seconds
-    union_and_evolve(0);
+    //expects psi_delta to be sorted
+    setup_connections();
     
     normalize_state(psi_lbl);
     sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
-    psi_amp.resize(psi_lbl.size());
+    psi_amp.resize(psi_lbl.size(),k);
     copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
     sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return abs_sqrd(it1) > abs_sqrd(it2);});
     
+    
+  }
+
+  
+
+  void setup_connections(){
+
+    //1 root node in psi_lbl
+    psi_lbl[0].idx = next_idx++;
+    vector<dir_edge_mode> empty_edge(0);
+    state_connections.push_back(empty_edge);
+     
+    for(auto &k: psi_delta){
+      vector<dir_edge_mode> edges;
+      k.idx = next_idx++;
+      
+      //apply hamiltonian
+      for(int i = 0; i < num_modes; i++){
+	
+	ket_pair kp = get_connected_states(k,i);
+	bool raised = kp.raised.idx==state_ket::empty_idx;
+	bool lowered = kp.lowered.idx==state_ket::empty_idx;
+	 
+	if(raised){
+	  //look for an instance
+	  int vec_idx = binary_search_lbl(kp.raised);
+	  if(vec_idx>-1){
+	    dir_edge_mode em;
+	    em.out_idx = psi_lbl[vec_idx].idx;
+	    em.connection_mode = i;
+	    em.raised = true;
+	    edges.push_back(em);
+	  }
+	  
+	}
+	if(lowered){
+	  int vec_idx = binary_search_lbl(kp.lowered);
+	  if(vec_idx>-1){
+	    dir_edge_mode em;
+	    em.out_idx = psi_lbl[vec_idx].idx;
+	    em.connection_mode = i;
+	    em.raised = false;
+	    edges.push_back(em); 
+	  }
+	}
+	
+      }//end mode loop
+      
+      state_connections.push_back(edges);
+      psi_lbl.push_back(k);
+    }//end k loop
     
   }
   
@@ -222,6 +274,7 @@ public:
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
 	  psi_delta.back().increment_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
 	}
 	break;
       case((1<<num_bits)-1):
@@ -230,6 +283,7 @@ public:
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
 	  psi_delta.back().decrement_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
 	}
 	break;
       default:
@@ -242,10 +296,12 @@ public:
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
 	  psi_delta.back().increment_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
 	  //lower
 	  psi_delta.push_back(psi_amp[idx]);
 	  psi_delta.back().spin = !psi_delta.back().spin;
 	  psi_delta.back().decrement_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
 	}
 	break;
 
@@ -357,54 +413,6 @@ public:
 
     return(result);
   }
-
-  void setup_connections(state_vector &psi){
-
-    for(auto &k:psi){
-      k.idx = next_idx++;
-    }
-
-     
-    for(auto &k: psi){
-      vector<dir_edge_mode> edges;
-              
-      //apply hamiltonian
-      for(int i = 0; i < num_modes; i++){
-	
-	ket_pair kp = get_connected_states(k,i);
-	bool raised = kp.raised.idx==state_ket::empty_idx;
-	bool lowered = kp.lowered.idx==state_ket::empty_idx;
-	 
-	if(raised){
-	  //look for an instance
-	  int vec_idx = binary_search_lbl(kp.raised);
-	  if(vec_idx>0){
-	    dir_edge_mode em;
-	    em.out_idx = psi_lbl[vec_idx].idx;
-	    em.connection_mode = i;
-	    em.raised = true;
-	    edges.push_back(em);
-	  }
-	  
-	}
-	if(lowered){
-	  int vec_idx = binary_search_lbl(kp.lowered);
-	  if(vec_idx){
-	    dir_edge_mode em;
-	    em.out_idx = psi_lbl[vec_idx].idx;
-	    em.connection_mode = i;
-	    em.raised = false;
-	    edges.push_back(em); 
-	  }
-	}
-	
-      }//end mode loop
-      
-      state_connections.push_back(edges);
-      
-    }//end k loop
-    
-  }
   void append_connections(state_vector &delta){
 
    
@@ -423,7 +431,7 @@ public:
 	 if(raised){
 	   //look for an instance
 	   int vec_idx = binary_search_lbl(kp.raised);
-	   if(vec_idx>0){
+	   if(vec_idx>-1){
 	     dir_edge_mode em;
 	     em.out_idx = psi_lbl[vec_idx].idx;
 	     em.connection_mode = i;
@@ -434,7 +442,7 @@ public:
 	 }
 	 if(lowered){
 	   int vec_idx = binary_search_lbl(kp.lowered);
-	   if(vec_idx){
+	   if(vec_idx>-1){
 	     dir_edge_mode em;
 	     em.out_idx = psi_lbl[vec_idx].idx;
 	     em.connection_mode = i;
@@ -471,26 +479,41 @@ public:
     
       sort(psi_delta.begin(),psi_delta.end(),[](auto &it1, auto &it2){return it1 < it2; });
       //dedupe
-      vector<state_ket> delta_clean(psi_delta.size());
+      state_ket w;
+      vector<state_ket> delta_clean(psi_delta.size(),w);
       delta_clean[0] = psi_delta[0];
+      delta_clean[0].amp = complex<double>(0,0);
       int j = 1;
       for(int i = 1; i < psi_delta.size(); i++){
 	if(delta_clean[j-1] < psi_delta[i]){
 	  delta_clean[j] = psi_delta[i];
+	  delta_clean[j].amp = complex<double>(0,0);
+	  j++;
+
 	}	
       }
       //RESIZE DELTA CLEAN BEFORE DOING ANYTHING ELSE!
       int delta_clean_size = j;
-      delta_clean.resize(delta_clean_size);
+      delta_clean.resize(delta_clean_size,w);      
+
+      psi_el = std::set_difference(delta_clean.begin(),delta_clean.end(),
+				   psi_lbl.begin(),psi_lbl.end(),psi_delta.begin(),[](auto &it1, auto &it2){return it1 < it2; });
 
       
+      psi_delta.resize(std::distance(psi_delta.begin(),psi_el));
       //append new connections before merge
-      append_connections(delta_clean);
+      append_connections(psi_delta);
+
 
       //merge into psi_lbl
-      psi_amp.resize(delta_clean.size()+psi_lbl.size());    
-      psi_el = std::set_union(psi_lbl.begin(),psi_lbl.end(),delta_clean.begin(),delta_clean.end(),
+      psi_amp.resize(delta_clean.size()+psi_lbl.size(),w);    
+      psi_el = std::set_union(psi_lbl.begin(),psi_lbl.end(),psi_delta.begin(),psi_delta.end(),
 			      psi_amp.begin(),[](auto &it1, auto &it2){return it1 < it2; });
+
+
+      psi_amp.resize(std::distance(psi_amp.begin(),psi_el));
+
+
       
     }//endif delta_size.()
     
@@ -498,7 +521,8 @@ public:
     evolve_current_space(dt);
     //move psi_amp to psi_lbl
     normalize_state(psi_amp);
-    psi_lbl.resize(psi_amp.size());
+    state_ket w;
+    psi_lbl.resize(psi_amp.size(),w);
     std::copy(psi_amp.begin(),psi_amp.end(),psi_lbl.begin());
     std::sort(psi_amp.begin(),psi_amp.end(),[](state_ket&it1,state_ket&it2){return abs_sqrd(it1)>abs_sqrd(it2);});
     
@@ -578,7 +602,7 @@ public:
     psi_delta.clear();
     psi_delta.reserve(num_modes*psi_amp.size());
 
-    /*
+   
     bool stop = false;
     for(int i = 0; i < psi_amp.size(); i++){
       stop = grow_configuration_space(i);
@@ -587,7 +611,7 @@ public:
 	
       }
     }
-    */
+    
     union_and_evolve(dt);
     
   }  
