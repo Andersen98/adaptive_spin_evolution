@@ -217,9 +217,9 @@ class State_Ket{
   friend std::ostream& operator<<( std::ostream&, const State_Ket<sp,ap,num_modes_,num_bits>& p );
 public:
 
-  State_Ket():spin(false),amp(0){}
+  State_Ket():idx(empty_idx),spin(false),amp(0){}
   //copy constructor
-  State_Ket(const State_Ket&c ):spin(c.spin),amp(c.amp),lbl(c.lbl),hist('0'),hist_mode(0){}
+  State_Ket(const State_Ket&c ):idx(empty_idx),spin(c.spin),amp(c.amp),lbl(c.lbl){}
   
   typedef Amplitude amplitude_type;
   typedef partial_config<num_modes,num_bits> Label;
@@ -228,12 +228,12 @@ public:
   Spin_Type spin;
   Amplitude amp;
   Label lbl;
-  char hist;
-  short int hist_mode;
-  
+  //idx is the absolute labeling
+  int idx;
   constexpr static int  num_modes_int = num_modes;
   constexpr static int max_level_int = 1<<num_bits -1;
-    
+  constexpr static int null_idx = -1;
+  constexpr static int empty_idx = -2;
   void add(State_Ket &c){
     amp += c.amp;
   }
@@ -267,12 +267,11 @@ public:
   bool operator==(const State_Ket &c)const{
     return( (spin== c.spin)&& (lbl == c.lbl));
   }
+  //DOES NOT COPY this.idx
   void operator=(const State_Ket &c){
     amp = c.amp;
     lbl = c.lbl;
     spin = c.spin;
-    hist = c.hist;
-    hist_mode = c.hist_mode;
   }
   void set_mode(int mode,long unsigned level){
     lbl.set_mode(mode,level);
@@ -292,7 +291,7 @@ public:
 
 template<typename sp,typename ap, int nm, int nb>
 std::ostream& operator<<( std::ostream& o, const State_Ket<sp,ap,nm,nb>& p ){
-
+  o << "idx: " << p.idx << std::endl;
   o << "Amplitude : " << p.amp << std::endl;
   o << "Spin(T/F): " <<  p.spin << std::endl;
   o << p.lbl;
