@@ -9,8 +9,8 @@
 #include <string>
 #include <tuple>
 #include "configuration.hpp"
-#include "input_tools.hpp"
-
+#include "io_tools/input_tools.hpp"
+#include "io_tools/output_tools.hpp"
 #include "hamiltonian.hpp"
 
 
@@ -68,13 +68,13 @@ int main(int argc, char * argv[]){
   std::ofstream of_mode(mode_file.c_str());
   vector<int> exceeded(0);
   if(of&& of_stats){
-    params.write_header(of);
-    params.write_stats_header(of_stats);
-    params.write_mode_pop_header(of_mode);
+    adaptive::write_spin_population_header(of,params);
+    adaptive::write_stats_header(of_stats,params);
+    adaptive::write_mode_pop_header(of_mode,params);
     for(int i = 0; i <params.N; i++){
       std::pair<double,double> pop = h.get_spin_pop();
-      params.write_pop_run(of,i+1,i*dt,pop.first,pop.second);
-      params.write_stats(of_stats, i+1, i*dt,h.get_psi_size(), exceeded);
+      adaptive::write_spin_population_run(of,params,i+1,i*dt,pop.first,pop.second);
+      adaptive::write_stats(of_stats,params, i+1, i*dt,h.get_psi_size(), exceeded);
       //params.write_mode_pop(of_mode,i+1,i*dt,h.get_modeLbl_quanta_pop());
       h.run_step(dt);
     }

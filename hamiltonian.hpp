@@ -12,7 +12,7 @@
 #include <iterator>
 #include <tuple>
 
-#include "input_tools.hpp"
+#include "io_tools/input_tools.hpp"
 #include "configuration.hpp"
 
 
@@ -602,7 +602,8 @@ public:
     psi_delta.clear();
     psi_delta.reserve(num_modes*psi_amp.size());
 
-   
+    //TODO: Maybe add a threshold for number of runs where the
+    //configuration has not grown. 
     bool stop = false;
     for(int i = 0; i < psi_amp.size(); i++){
       stop = grow_configuration_space(i);
