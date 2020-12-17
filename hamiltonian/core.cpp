@@ -1,6 +1,6 @@
-#include "hamiltonian.cpp"
+#include "hamiltonian.hpp"
 
-hamiltonian::void run_step(double dt){
+void hamiltonian::run_step(double dt){
     mode_cap_exceeded.clear();
     psi_delta.clear();
     psi_delta.reserve(NUM_MODES*psi_amp.size());
@@ -18,11 +18,17 @@ hamiltonian::void run_step(double dt){
     
     merge_states();
 
-    evolve_current_space(dt);
     
+    evolve_space(dt);
+
+    normalize_state(psi_amp);
+    psi_lbl.resize(psi_amp.size());
+    copy(psi_amp.begin(),psi_amp.end(),psi_lbl.begin());
+    sort(psi_amp.begin(),psi_amp.end(),
+	 [](auto &it1,auto &it2){return norm(it1.amp) < norm(it2.amp);});
   }
 
-ket_pair hamiltonian::get_connected_states(const state_ket &k,const int mode){
+hamiltonian::ket_pair hamiltonian::get_connected_states(const state_ket &k,const int mode){
 
     int level = k.get_mode(mode);
     ket_pair kp(k);
@@ -65,19 +71,12 @@ ket_pair hamiltonian::get_connected_states(const state_ket &k,const int mode){
 
 
 
-static double hamiltonian::abs_sqrd(const state_ket &p){
-  return(std::norm(p.amp));
-}
 
-static double hamiltonian::abs(const state_ket &p){
-  return(std::abs(p.amp));
-}
-
-static void hamiltonian::normalize_state(state_vector &p){
+void hamiltonian::normalize_state(state_vector &p){
   
   double N = 0;
   for(const state_ket &k: p){
-    N += abs_sqrd(k);
+    N += norm(k.amp);
   }
   N = 1/std::sqrt(N);
   for_each(p.begin(),p.end(),[N](state_ket &k){k.amp*=N;});

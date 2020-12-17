@@ -57,7 +57,9 @@ class partial_config{
   
 public:
 
-  partial_config():rep{0}{}
+  partial_config():rep{0}{
+    rep.fill(0);
+  }
   partial_config(const partial_config& c):rep{0}{
     std::copy(std::begin(c.rep),std::end(c.rep),std::begin(rep));
   }
@@ -74,11 +76,11 @@ public:
   bool operator<(const partial_config &d) const{
     //copied from Dice Determinat.h
     
-    for (int i=giant_count -1; i >=0; i--){
+    for (int i= int(giant_count) -1; i >=0; i--){
       if(rep[i] > d.rep[i] /*int compare is swapped from mode compare */) {
 	return true;
-      }else if (rep[i] < d.rep[i]){
-      	return false;
+      }else if(rep[i] < d.rep[i]){
+	return false;
       }
     }
     return false;
@@ -284,17 +286,18 @@ public:
   bool operator <(const State_Ket &c) const{
     if( spin < c.spin){
       return true;
-
+      
     }else if(spin > c.spin){
       return false;
-
+      
     }else if(lbl < c.lbl){
       return true;
-    }else
+    }else{
       //spin == c.spin, lbl > c.lbl
       //spin == c.spin, lbl == c.lbl
       return false;
     }
+  }
     
   
 

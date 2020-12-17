@@ -3,7 +3,7 @@
 
 using namespace std;
 
-state_vector &hamiltonian::get_state_vector()const{
+const hamiltonian::state_vector &hamiltonian::get_state_vector()const{
     return psi_lbl;
   }
 int hamiltonian::get_psi_size()const{
@@ -16,9 +16,9 @@ pair<double,double> hamiltonian::get_spin_pop()const{
 
     for(const auto&k:psi_lbl){
       if(k.spin){
-	result.first += abs_sqrd(k);
+	result.first += norm(k.amp);
       }else{
-	result.second += abs_sqrd(k);
+	result.second += norm(k.amp);
       }	
     }
     
@@ -26,13 +26,13 @@ pair<double,double> hamiltonian::get_spin_pop()const{
 
   }
 
-array<tuple<int,double,double>,NUM_MODES> hamiltonian::get_modeLbl_quanta_pop(){
+array<tuple<int,double,double>,NUM_MODES> hamiltonian::get_modeLbl_quanta_pop()const{
     array<tuple<int,double,double>,NUM_MODES> result;
 
     for_each(result.begin(),result.end(),[j=0](auto &el)mutable{el= std::make_tuple<int,double,double>(j++,0,0);});
     for_each(result.begin(),result.end(),[&](auto &el){
       for(auto &ket:psi_lbl){
-	double probability =abs_sqrd(ket);
+	double probability =norm(ket.amp);
 	int number_expectation =0;
 	int modeLbl = std::get<0>(el);
 	int nVal = ket.get_mode(modeLbl);

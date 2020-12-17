@@ -60,7 +60,7 @@ hamiltonian::hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},old2n
     sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
     psi_amp.resize(psi_lbl.size(),k);
     copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-    sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return abs_sqrd(it1) > abs_sqrd(it2);});
+    sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return norm(it1.amp) > norm(it2.amp);});
     
     
   }

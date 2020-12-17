@@ -4,7 +4,7 @@
 
 void hamiltonian::evolve_space(double dt){
 
-    //sort by label
+
 
     vector<int> con2amp(psi_amp.size());
     for(int i = 0; i < psi_amp.size(); i++){
@@ -13,7 +13,7 @@ void hamiltonian::evolve_space(double dt){
     }
     vector<complex<double>> delta(psi_amp.size());
 
-    for(int i = 0; i < next_idx; i ++){
+    for(int i = 0; i < state_connections.size(); i ++){
       complex<double> start_amp = psi_amp[con2amp[i]].amp;
       //diagonal term
       //--atom energy
@@ -43,5 +43,7 @@ void hamiltonian::evolve_space(double dt){
       psi_amp[con2amp[i]].amp += delta[i];
       
     }
+
+
 
 }

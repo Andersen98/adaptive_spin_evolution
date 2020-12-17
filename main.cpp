@@ -37,30 +37,21 @@ int main(int argc, char * argv[]){
     
 
   
-  const double final_time = params.tf;
-  const double dt = params.dt;
-  const int time_steps = final_time/dt;
-  const double energy_cutoff = params.energy_cutoff;
+  
+  
 
- 
-  Spin_Params spin_params;
-
-  //Complex Number Tools
-  //also typedefs
-  typedef State_Ket<NUM_MODES,NUM_BITS> state_ket;
-  typedef vector<state_ket> state_vector;
-  typedef vector<double>::iterator Iter_m; //mode iterator
-  typedef vector<double>::iterator Iter_c; //coupling iterator
   
   
   //make hamiltonian
   hamiltonian h(params);
-  
+  const double dt = params.dt;
+
 
   //setup output stream
   string output_file = params.output_directory+to_string(params.run_id)+".out";
   string stats_file = params.output_directory+to_string(params.run_id)+".stats";
   string mode_file = params.output_directory+to_string(params.run_id)+".modes";
+  string final_state_file = params.output_directory+to_string(params.run_id)+".end_state";
   std::ofstream of(output_file.c_str());
   std::ofstream of_stats(stats_file.c_str());
   std::ofstream of_mode(mode_file.c_str());
@@ -77,10 +68,10 @@ int main(int argc, char * argv[]){
       h.run_step(dt);
     }
   }
-  
+
+  adaptive::write_state(final_state_file,h);
   of.close();
   of_stats.close();
   of_mode.close();
-  
   return 0;
 }

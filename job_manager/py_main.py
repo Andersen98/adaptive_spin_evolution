@@ -11,12 +11,12 @@ if __name__=='__main__':
     
 
     params = {
-        "run_info":{"run_id":1429,"num_modes":100,"system_paths":
-                    {"code_output_dir":"/home/ethan/research/code/run_output/1429/",
-                     "excecutable":"/home/ethan/research/code/adaptive_spin",
+        "run_info":{"run_id":1429,"num_modes":2,"system_paths":
+                    {"code_output_dir":"/home/ethan/code/run_output/1429/",
+                     "excecutable":"/home/ethan/code/adaptive_spin",
                      }
                     },
-        "time_params":{"dt":.01,"tf":30},
+        "time_params":{"dt":.0001,"tf":.0004},
 
     "initial_state":
         [{"re":.5,"im":0,"spin":True,"idx":0,"n":0},
@@ -24,10 +24,10 @@ if __name__=='__main__':
 
         "energy_info":{
             "params":{
-            "cutoff":.0001,
-                "w0":6,
-                "g0":3,
-                "v0":6,
+            "cutoff":0.0,
+                "w0":3,
+                "g0":.2,
+                "v0":3,
                 "energy_spectral_density":1
             },
           

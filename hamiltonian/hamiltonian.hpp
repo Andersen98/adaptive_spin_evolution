@@ -88,7 +88,7 @@ class hamiltonian{
   //helper used by append_connections
   //append_connections.cpp
   int binary_search_lbl(const state_ket &k);
-  void append_connections(state_vector &delta);
+  void append_connections();
 
   //merge_states.cpp
   void merge_states();
@@ -98,9 +98,7 @@ class hamiltonian{
   
   //core.cpp
   ket_pair get_connected_states(const state_ket &k,const int mode);
-  static double abs_sqrd(const state_ket &p);
   static void normalize_state(state_vector &p);
-  static double abs(const state_ket &p);
 public:
   //core.cpp
   void run_step(double dt);
@@ -110,7 +108,7 @@ public:
   hamiltonian(const param_vals &params_);
   
   //output.cpp
-  state_vector &get_state_vector()const;
+  const state_vector &get_state_vector()const;
   int get_psi_size()const;
   pair<double,double> get_spin_pop()const;
   array<tuple<int,double,double>,NUM_MODES> get_modeLbl_quanta_pop()const;

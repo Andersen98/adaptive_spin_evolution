@@ -92,7 +92,7 @@ namespace adaptive{
 
   void write_state(std::string out_path, const hamiltonian &h){
 
-    array<int,NUM_MODES> new2old = h.get_new2old();
+    const array<int,NUM_MODES> &new2old = h.get_new2old();
     const auto & state_vector = h.get_state_vector();
     
     
@@ -140,8 +140,8 @@ namespace adaptive{
     
     FILE* fp = fopen(out_path.c_str(),"w");
 
-    const int gig = 1073741824;
-    char write_buffer[gig];
+
+    char write_buffer[64000];
     FileWriteStream os(fp, write_buffer, sizeof(write_buffer));
 
     Writer<FileWriteStream> writer(os);

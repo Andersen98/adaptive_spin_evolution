@@ -1,10 +1,10 @@
 objects = main.o input_tools.o output_tools.o
-flags = -std=c++17 -ggdb -O0 -Wall -I/home/ethan/libraries/builds/rapidjson/include/ 
-dflags = -DNUM_MODES=100 -DNUM_BITS=4
+flags = -std=c++20 -ggdb3 -O0 -Wall
+dflags = -DNUM_MODES=2 -DNUM_BITS=8
 hamiltonian_objects = grow_configuration_space.o evolve_space.o append_connections.o merge_states.o setup.o core.o output.o
-
+objects += ${hamiltonian_objects}
 #-Wl,-t
-adaptive_spin: ${objects} ${hamiltonian_objects}
+adaptive_spin: ${objects}
 	g++ ${dflags} ${flags}  -o adaptive_spin ${objects} -lboost_program_options  
 main.o: configuration.hpp io_tools/input_tools.hpp io_tools/output_tools.hpp main.cpp hamiltonian/hamiltonian.hpp spin_density_matrix.hpp
 	g++ ${dflags} ${flags} -c main.cpp

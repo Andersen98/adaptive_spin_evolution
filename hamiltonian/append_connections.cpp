@@ -13,48 +13,51 @@ int hamiltonian::binary_search_lbl(const state_ket &k){
     return(result);
   }
 
-void hamiltonian::append_connections(state_vector &delta){
+void hamiltonian::append_connections(){
 
    
     
-     for(auto &k: delta){
-       vector<dir_edge_mode> edges;
-       k.idx = next_idx++;
-       
-       //apply hamiltonian
-       for(int i = 0; i < NUM_MODES; i++){
+  for(auto &ket : psi_amp){
+    
+    if(ket.idx != state_ket::empty_idx){
+      continue;
+    }
+    
+    ket.idx = int(state_connections.size());
+    vector<dir_edge_mode> edges;   
+    //apply hamiltonian
+    for(int i = 0; i < NUM_MODES; i++){
 	 
-	 ket_pair kp = get_connected_states(k,i);
-	 bool raised = kp.raised.idx==state_ket::empty_idx;
-	 bool lowered = kp.lowered.idx==state_ket::empty_idx;
+      ket_pair kp = get_connected_states(ket,i);
+      bool raised = kp.raised.idx==state_ket::empty_idx;
+      bool lowered = kp.lowered.idx==state_ket::empty_idx;
 
-	 if(raised){
-	   //look for an instance
-	   int vec_idx = binary_search_lbl(kp.raised);
-	   if(vec_idx>-1){
-	     dir_edge_mode em;
-	     em.out_idx = psi_lbl[vec_idx].idx;
-	     em.connection_mode = i;
-	     em.raised = true;
-	     edges.push_back(em);
-	   }
+      if(raised){
+	//look for an instance
+	int vec_idx = binary_search_lbl(kp.raised);
+	if(vec_idx > -1){
+	  dir_edge_mode em;
+	  em.out_idx = psi_amp[vec_idx].idx;
+	  em.connection_mode = i;
+	  em.raised = true;
+	  edges.push_back(em);
+	}
+      }
+      if(lowered){
+	int vec_idx = binary_search_lbl(kp.lowered);
+	if(vec_idx>-1){
+	  dir_edge_mode em;
+	  em.out_idx = psi_amp[vec_idx].idx;
+	  em.connection_mode = i;
+	  em.raised = false;
+	  edges.push_back(em); 
+	}
+      }
 
-	 }
-	 if(lowered){
-	   int vec_idx = binary_search_lbl(kp.lowered);
-	   if(vec_idx>-1){
-	     dir_edge_mode em;
-	     em.out_idx = psi_lbl[vec_idx].idx;
-	     em.connection_mode = i;
-	     em.raised = false;
-	     edges.push_back(em); 
-	   }
-	 }
-
-       }//end mode loop
-
-       state_connections.push_back(edges);
+    }//end mode loop
+    
+    state_connections.push_back(edges);
        
-     }//end k loop
-  }
+  }//end k loop
+}
      

@@ -5,7 +5,7 @@
 bool hamiltonian::grow_configuration_space(int idx){
     bool stop = false;
 
-    double magnitude = abs(psi_amp[idx]);
+    double magnitude = abs(psi_amp[idx].amp);
     if(g[num_levels-1][0]*magnitude < params.energy_cutoff){
       return true;
     }
