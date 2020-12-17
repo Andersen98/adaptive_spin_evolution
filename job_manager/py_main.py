@@ -12,8 +12,8 @@ if __name__=='__main__':
 
     params = {
         "run_info":{"run_id":1429,"num_modes":100,"system_paths":
-                    {"code_output_dir":"/home/ethan/Documents/research/code/adaptive_spin_evolution/run_output/1429/",
-                     "excecutable":"/home/ethan/Documents/research/code/adaptive_spin_evolution/adaptive_spin",
+                    {"code_output_dir":"/home/ethan/research/code/run_output/1429/",
+                     "excecutable":"/home/ethan/research/code/adaptive_spin",
                      }
                     },
         "time_params":{"dt":.01,"tf":30},

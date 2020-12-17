@@ -17,8 +17,8 @@ class mode_generator:
         self.num_modes=num_modes_
         self.rng=default_rng()
         self.num_modes=num_modes_
-        self.fastest_time = 20*dt_
-
+        self.fast_time = 5*2*np.pi*dt_
+        self.long_time = 5*2*np.pi *np.sqrt(1.0/num_modes_)/spectral_energy_
     def w_g_rnd_dist(self):
         N = self.num_modes
         gamma = self.spectral_energy
@@ -27,7 +27,7 @@ class mode_generator:
         g = np.array([])
         w = np.array([])
         if(self.num_modes > 1):
-            w = np.linspace(self.fastest_time,0,num=(N-1),endpoint=False)
+            w = np.linspace(self.fast_time,self.long_time,num=(N-1))
             w = 1/w;
             g = self.rng.random(N-1)
             norm = np.sum(g**2,axis=0)
@@ -106,6 +106,9 @@ def generate_json(params,print_command=True,dump_template=False):
         with open(json_out,"w") as f:
             json_string = json.dumps(params,indent=4)
             f.write(json_string)
+            print(json_string)
+        print(json_out)
+    
             
             
         #                      End Subsection                             #

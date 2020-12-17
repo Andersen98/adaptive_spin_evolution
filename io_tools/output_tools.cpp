@@ -1,8 +1,17 @@
 #include "output_tools.hpp"
+#include "input_tools.hpp"
 
+#include <boost/format.hpp>
+
+#include <rapidjson/document.h>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/writer.h>
+#include <cstdio>
+#include <array>
+#include <complex>
 using namespace std;
 using boost::format;
-
+using namespace rapidjson;
 namespace adaptive{
 
   void write_spin_population_header(ofstream &o, const param_vals &p){
@@ -80,5 +89,66 @@ namespace adaptive{
   
   }
 
+
+  void write_state(std::string out_path, const hamiltonian &h){
+
+    array<int,NUM_MODES> new2old = h.get_new2old();
+    const auto & state_vector = h.get_state_vector();
+    
+    
+    //construct document
+    Document d;
+    d.SetObject();
+
+    auto & allocator = d.GetAllocator();
+  
+
+    //construct state_vector array
+    Value state_vector_v(kArrayType);
+    for(int i = 0; i < int(state_vector.size()); i ++){
+      Value re(real(state_vector[i].amp));
+      Value im(imag(state_vector[i].amp));
+      Value spin(state_vector[i].spin);
+      Value active_modes(kArrayType);
+      for(int j = 0; j < NUM_MODES;j++){
+	int level = state_vector[i].get_mode(j);
+	if(level > 0){
+	  Value el(kObjectType);
+	  el.AddMember("idx",new2old[j], allocator);
+	  el.AddMember("level", level,allocator);
+
+	  active_modes.PushBack(el,allocator);
+	  
+	}
+      }
+
+      Value state_ket_v(kObjectType);
+      state_ket_v.AddMember("active_modes",active_modes,allocator);
+      state_ket_v.AddMember("re",re,allocator);
+      state_ket_v.AddMember("im",im,allocator);
+      state_ket_v.AddMember("spin",spin,allocator);
+      
+      state_vector_v.PushBack(state_ket_v,allocator);
+      
+    }
+
+    //add state_vector array to document
+
+    d.AddMember("state_vector",state_vector_v,allocator);
+
+    //write document to stream
+    
+    FILE* fp = fopen(out_path.c_str(),"w");
+
+    const int gig = 1073741824;
+    char write_buffer[gig];
+    FileWriteStream os(fp, write_buffer, sizeof(write_buffer));
+
+    Writer<FileWriteStream> writer(os);
+    d.Accept(writer);
+
+    fclose(fp);
+    
+  }
   
 }

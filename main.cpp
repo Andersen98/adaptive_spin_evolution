@@ -11,7 +11,7 @@
 #include "configuration.hpp"
 #include "io_tools/input_tools.hpp"
 #include "io_tools/output_tools.hpp"
-#include "hamiltonian.hpp"
+#include "hamiltonian/hamiltonian.hpp"
 
 
 using namespace std;
@@ -47,16 +47,14 @@ int main(int argc, char * argv[]){
 
   //Complex Number Tools
   //also typedefs
-  typedef complex<double> Amplitude;
-  typedef bool spin_type;
-  typedef State_Ket<spin_type,Amplitude, NUM_MODES,NUM_BITS> state_ket;
+  typedef State_Ket<NUM_MODES,NUM_BITS> state_ket;
   typedef vector<state_ket> state_vector;
   typedef vector<double>::iterator Iter_m; //mode iterator
   typedef vector<double>::iterator Iter_c; //coupling iterator
   
   
   //make hamiltonian
-  hamiltonian<NUM_MODES,NUM_BITS> h(params);
+  hamiltonian h(params);
   
 
   //setup output stream

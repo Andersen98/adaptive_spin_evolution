@@ -11,6 +11,7 @@
 #include <cmath>
 #include <iterator>
 #include <tuple>
+#include <memory> //allocator_traits
 
 #include "io_tools/input_tools.hpp"
 #include "configuration.hpp"
@@ -36,16 +37,14 @@ using std::set_intersection;
 using std::for_each;
 using std::copy;
 
-
-template<int num_modes, int num_bits>
 class hamiltonian{
 
-  typedef State_Ket<bool,std::complex<double>,num_modes,num_bits> state_ket;
-  typedef vector<state_ket> state_vector;
-  using state_vector_iterator = typename state_vector::iterator;
+  State_Ket<bool,std::complex<double>,NUM_MODES,NUM_BITS> state_ket;
+  vector<state_ket> state_vector;
+  typdef state_vector::iterator state_vector_iterator;
 
-  array<array<double,num_modes>, (1<<num_bits)> g;
-  array<double,num_modes> m;
+  array<array<double,NUM_MODES>, (1<<NUM_BITS)> g;
+  array<double,NUM_MODES> m;
 
   param_vals params;
   vector<int> mode_cap_exceeded;
@@ -77,27 +76,62 @@ class hamiltonian{
     
   };
   
+
+  void setup_connections();
+  static double abs_sqrd(const state_ket p);
+
+  static void normalize_state(state_vector &p);
+  
+  bool grow_configuration_space(int idx);
+
+  void evolve_current_space(double dt);
+
+  ket_pair get_connected_states(const state_ket &k,const int mode);
+
+  //helper used by append_connections
+  int binary_search_lbl(const state_ket &k);
+  void append_connections(state_vector &delta);
+
+  void union_and_evolve(double dt);
   
 public:
+  hamiltonian(const param_vals &params_);
+  state_vector get_psi()const;
+  int get_psi_size()const;
+  pair<double,double> get_spin_pop()const;
+  array<tuple<int,double,double>,NUM_MODES> get_modeLbl_quanta_pop();
+  void run_step(double dt);
+
+
   
-  hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},params(params_),num_levels(1<<num_bits),psi_lbl(0),psi_amp(0),next_idx(0),state_connections(){
+};
+
+
+#endif
+
+
+class hamiltonian{
+  
+    
+  
+  hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},params(params_),num_levels(1<<NUM_BITS),psi_lbl(0),psi_amp(0),next_idx(0),state_connections(){
 
        
-    vector<pair<int,double>> idx_g_pairs(num_modes);
-    vector<int> old2new (num_modes);
-    for(int i=0;i< num_modes;i++){
+    vector<pair<int,double>> idx_g_pairs(NUM_MODES);
+    vector<int> old2new (NUM_MODES);
+    for(int i=0;i< NUM_MODES;i++){
       idx_g_pairs[i] = std::make_pair(i,params.mode_couplings[i]);
     }
     
     sort(idx_g_pairs.begin(),idx_g_pairs.end(),[](auto &it1,auto &it2){return it1.second > it2.second;});
 
     //map from old idx to new idx
-    for(int i = 0; i < num_modes; i++){
+    for(int i = 0; i < NUM_MODES; i++){
       int j =  idx_g_pairs[i].first;
       old2new[j] = i;
     }
 
-    for(int j = 0; j < num_modes; j++){
+    for(int j = 0; j < NUM_MODES; j++){
 	int i = idx_g_pairs[j].first;
 	double gi = idx_g_pairs[j].second;
 	//DEBUG
@@ -157,7 +191,7 @@ public:
       k.idx = next_idx++;
       
       //apply hamiltonian
-      for(int i = 0; i < num_modes; i++){
+      for(int i = 0; i < NUM_MODES; i++){
 	
 	ket_pair kp = get_connected_states(k,i);
 	bool raised = kp.raised.idx==state_ket::empty_idx;
@@ -232,8 +266,8 @@ public:
 
   }
   
-  array<tuple<int,double,double>,num_modes> get_modeLbl_quanta_pop(){
-    array<tuple<int,double,double>,num_modes> result;
+  array<tuple<int,double,double>,NUM_MODES> get_modeLbl_quanta_pop(){
+    array<tuple<int,double,double>,NUM_MODES> result;
 
     for_each(result.begin(),result.end(),[j=0](auto &el)mutable{el= std::make_tuple<int,double,double>(j++,0,0);});
     for_each(result.begin(),result.end(),[&](auto &el){
@@ -264,7 +298,7 @@ public:
     // Sum omega_j n_j + params.emitter_energy;
     int j = 0;
     complex<double> prefactor = std::complex<double>(0,-1) * psi_amp[idx].amp;
-    while((j < num_modes) && (params.energy_cutoff < premagnitude*g[num_levels-1][j]) ){
+    while((j < NUM_MODES) && (params.energy_cutoff < premagnitude*g[num_levels-1][j]) ){
 
       int level = psi_amp[idx].get_mode(j);
       switch(level){
@@ -277,7 +311,7 @@ public:
 	  psi_delta.back().idx = state_ket::empty_idx;
 	}
 	break;
-      case((1<<num_bits)-1):
+      case((1<<NUM_BITS)-1):
 	//max state, only lower
 	if(params.energy_cutoff < premagnitude*g[level][j]){
 	  psi_delta.push_back(psi_amp[idx]);
@@ -375,7 +409,7 @@ public:
        kp.raised.spin = !kp.raised.spin;
   
        break;
-     case((1<<num_bits)-1):
+     case((1<<NUM_BITS)-1):
        //lower
        kp.lowered.idx = state_ket::empty_idx;
        kp.lowered.decrement_mode(mode);
@@ -422,7 +456,7 @@ public:
        k.idx = next_idx++;
        
        //apply hamiltonian
-       for(int i = 0; i < num_modes; i++){
+       for(int i = 0; i < NUM_MODES; i++){
 	 
 	 ket_pair kp = get_connected_states(k,i);
 	 bool raised = kp.raised.idx==state_ket::empty_idx;
@@ -463,6 +497,16 @@ public:
  
   void union_and_evolve(double dt){
     if(psi_delta.size()>0){
+      typename state_vector::iterator psi_el;
+      //append psi_delta to psi_amp
+      psi_amp.reserve(psi_amp.size()+psi_delta.size());
+      psi_el = psi_amp.end();
+      psi_amp.resize(psi_amp.size()+psi_delta.size());
+      assert(std::allocator_traits<typename state_vector::get_allocator>::is_always_equal);
+      
+      
+
+
       //==============set_union====================
       /*USAGE
 	template< class InputIt1, class InputIt2, class OutputIt >
@@ -479,6 +523,23 @@ public:
     
       sort(psi_delta.begin(),psi_delta.end(),[](auto &it1, auto &it2){return it1 < it2; });
       //dedupe
+      vector<int> a(psi_delta.size());
+      int j = 1;
+      a[0] = 0;
+      for(int i =1; i < psi_delta.size(); i++){
+	if(psi_delta[a[j-1]] < psi_delta[i]){
+	  a[j] = i;
+	  j++;
+	}
+      }
+      //copy over deduped list
+      vector<state_ket> delta_clean(j);
+      for(int i = 0; i < j; i++){
+
+	delta_clean[i] = psi_delta[a[i]];
+      }
+      
+      std::for_each(a.begin(),a.end(),[&](auto idx)
       state_ket w;
       vector<state_ket> delta_clean(psi_delta.size(),w);
       delta_clean[0] = psi_delta[0];
@@ -527,80 +588,11 @@ public:
     std::sort(psi_amp.begin(),psi_amp.end(),[](state_ket&it1,state_ket&it2){return abs_sqrd(it1)>abs_sqrd(it2);});
     
   }
-  void merge_and_sort(){
-    //psi_amp is the diagonal evolution
-    //psi_delta is off diagonal evolution, but in general contains duplicates
-    sort(psi_amp.begin(),psi_amp.end());
-    sort(psi_delta.begin(),psi_delta.end());
-    for( int i = 0; i < psi_amp.size(); i++){
-      psi_lbl[i].amp += psi_delta[i].amp;
-      //DEBUG Begin
-      assert(psi_amp[i].spin==psi_lbl[i].spin);
-      assert(psi_amp.size()==psi_lbl.size());
-      //Dend
-    }
-
-     
-    typename state_vector::iterator set_int,diff_end;
-    psi_lbl.reserve(psi_lbl.size()+psi_delta.size());
-    diff_end = psi_lbl.end();
-    /* ========set_difference=============
-      "Copies the elements from the sorted range [first1, last1) which are 
-      not found in the sorted range [first2, last2) to the range beginning at d_first."
-      cppreference
-      returns "iterator past the end of the constructed range."
-     
-      Method: use set difference and std::back_inserter to append elements from delta that are not 
-      in lbl
-    */
-    set_difference(psi_delta.begin(),psi_delta.end(),psi_lbl.begin(),psi_lbl.end(),std::back_inserter(psi_lbl));
     
-    
-    /*=======set intersection
-      "Constructs a sorted range beginning at d_first consisting of elements that are found in 
-      both sorted ranges [first1, last1) and [first2, last2). If some element is found m times 
-      in [first1, last1) and n times in [first2, last2), the first std::min(m, n) elements
-      will be copied from the first range to the destination range. The order of equivalent 
-      elements is preserved. The resulting range cannot overlap with either of the input ranges. 
-
-      returns Iterator past the end of the constructed range. 
-
-      Method: the intersection is copied to psi_amp. then we add the two up to the consrtucted range
-     */
-  
-    set_int= set_intersection(psi_delta.begin(),psi_delta.end(),psi_lbl.begin(),diff_end,
-			      psi_amp.begin());
-    int end_size = std::distance(psi_amp.begin(),set_int);
-    for(int i = 0; i < end_size; i++){
-      psi_lbl[i].amp += psi_amp[i].amp;
-      
-    }
-
-
-    
-    /*=========in place merge=================
-      "Merges two consecutive sorted ranges [first, middle) and [middle, last)
-      into one sorted range [first, last).A sequence [first, last) is said to be sorted with
-      respect to a comparator comp if for any iterator it pointing to the sequence and any 
-      non-negative integer n such that it + n is a valid iterator pointing to an element of 
-      the sequence, comp(*(it + n), *it) evaluates to false. "
-      
-      returns(none)
-     */
-    inplace_merge(psi_lbl.begin(),diff_end,psi_lbl.end());
-
-    psi_amp.resize(psi_lbl.size());
-    normalize_state(psi_lbl);
-    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-    sort(psi_amp.begin(),psi_amp.end(), [](auto &it1,auto &it2){return(abs_sqrd(it1)>abs_sqrd(it2));});
-    
-
-  }
-
   void run_step(double dt){
     mode_cap_exceeded.clear();
     psi_delta.clear();
-    psi_delta.reserve(num_modes*psi_amp.size());
+    psi_delta.reserve(NUM_MODES*psi_amp.size());
 
     //TODO: Maybe add a threshold for number of runs where the
     //configuration has not grown. 
@@ -620,4 +612,4 @@ public:
 };
   
 
-#endif  
+

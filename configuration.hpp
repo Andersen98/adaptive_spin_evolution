@@ -8,6 +8,9 @@
 #include <cassert>
 #include <iostream>
 #include <array>
+#include <boost/format.hpp>
+#include <string>
+#include <utility>
 inline int bit_count (long x)
 {
   x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
@@ -196,10 +199,38 @@ vector<long unsigned> partial_config<modes,bits>::mode_masks = get_mask<bits>();
 template <int modes,int bits>
 std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p ) {
 
-  for(int i = 0; i<partial_config<modes,bits>::giant_count; i++){
-    o <<"Modes: " << (i+1)*64-1 << " - " << i*64  <<" ("
-      << bitset<64>(p.rep[i]) << " )" << std::endl ;
+  int modes_per_line = 10;
+  std::array<std::pair<int,int>,modes> mode_level_array;
+  int num_active_modes=0;
+  for(int i = 0; i < modes; i++){
+    int level = p.get_mode(i);
+    if(level > 0){
+      num_active_modes++;
+      mode_level_array[num_active_modes-1] = make_pair<int,int>(std::forward<int&&>(i),std::forward<int&&>(level)) ;
+    }
   }
+  int rem =  num_active_modes%modes_per_line;
+  int div = num_active_modes/modes_per_line;
+  std::string format_str = "%|1$-d|:|2$-d|%|8t|%|3$-d|:|4$-d|%|16t|%|5$-d|:|6$-d|%|24t|%|7$-d|:|8$-d|%|32t|%|9$-d|:|10$-d|%|40t|%|11$-d|:|12$-d|%|48t|%|13$-d|:|14$-d|%|56t|%|15$-d|:|16$-d|%|64t|%|17$-d|:|18$-d|%|72t|%|19$-d|:|20$-d|%|80t|\n";
+
+  boost::format fmtr(format_str);
+  boost::format fmtr_single("%|1$-d|:|2$-d|");
+  int j = 0;
+  
+  if(div){
+    for(int i = 0; i < modes_per_line*div; i++){
+      fmtr % mode_level_array[j].first;
+      fmtr % mode_level_array[j].second;
+      j++;
+    }
+    o << fmtr;
+  }else if(rem){
+      
+    for(int i = 0; i < rem; i++){
+      o << fmtr_single % mode_level_array[j].first % mode_level_array[j].second << "  ";
+    }
+  }
+  
   return o;
   
 }
@@ -211,19 +242,19 @@ std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p 
 
 
 //State_Ket is the main interface. Full config and complex are behind the scenes
-template<typename Spin_Type,typename Amplitude, int num_modes, int num_bits >
+template<int num_modes,int num_bits >
 class State_Ket{
-  template<typename sp,typename ap, int num_modes_, int num_bits_>
-  friend std::ostream& operator<<( std::ostream&, const State_Ket<sp,ap,num_modes_,num_bits>& p );
+  template< int num_modes_, int num_bits_>
+  friend std::ostream& operator<<( std::ostream&, const State_Ket<num_modes_,num_bits>& p );
 public:
 
-  State_Ket():idx(empty_idx),spin(false),amp(0.0),lbl(){}
+  State_Ket():spin(false),amp(0.0),lbl(),idx(empty_idx){}
   //copy constructor
   State_Ket(const State_Ket&c ):idx(c.idx),spin(c.spin),amp(c.amp),lbl(c.lbl){}
   
-  typedef Amplitude amplitude_type;
+  typedef std::complex<double> Amplitude;
   typedef partial_config<num_modes,num_bits> Label;
-  typedef Spin_Type spin_type;
+  typedef bool Spin_Type;
 
   Spin_Type spin;
   Amplitude amp;
@@ -254,14 +285,17 @@ public:
     if( spin < c.spin){
       return true;
 
-    }else if(spin == c.spin && (lbl < c.lbl) ){
+    }else if(spin > c.spin){
+      return false;
+
+    }else if(lbl < c.lbl){
       return true;
-    }else{
-      //spin > c.spin
+    }else
+      //spin == c.spin, lbl > c.lbl
+      //spin == c.spin, lbl == c.lbl
       return false;
     }
     
-  }
   
 
   bool operator==(const State_Ket &c)const{
@@ -290,11 +324,10 @@ public:
   
 };
 
-template<typename sp,typename ap, int nm, int nb>
-std::ostream& operator<<( std::ostream& o, const State_Ket<sp,ap,nm,nb>& p ){
-  o << "idx: " << p.idx << std::endl;
-  o << "Amplitude : " << p.amp << std::endl;
-  o << "Spin(T/F): " <<  p.spin << std::endl;
+template<int nm, int nb>
+std::ostream& operator<<( std::ostream& o, const State_Ket<nm,nb>& p ){
+  boost::format fmtr("Amp:(%|1$-e|,%|2$-e|)  Spin:%|2$-b|\n");
+  o << fmtr;
   o << p.lbl;
   return o;
 

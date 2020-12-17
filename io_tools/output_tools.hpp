@@ -11,15 +11,7 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/format.hpp>
-
-
-#include <rapidjson/document.h>
-#include <rapidjson/istreamwrapper.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
-
-#include "input_tools.hpp"
+#include "../hamiltonian/hamiltonian.hpp"
 
 namespace adaptive{
 
@@ -32,7 +24,8 @@ namespace adaptive{
   void write_mode_pop(std::ofstream &o, const param_vals&, int id, double time,std::array<std::tuple<int,double,double>,NUM_MODES> mode_lbl_quanta_pop);
 
 
-
+  void write_state(std::string out_path, const hamiltonian &h);
+  
 
 }
 
