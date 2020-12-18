@@ -16,7 +16,7 @@ if __name__=='__main__':
                      "excecutable":"/home/ethan/code/adaptive_spin",
                      }
                     },
-        "time_params":{"dt":.0001,"tf":.0005},
+        "time_params":{"dt":.01,"tf":4},
 
     "initial_state":
         [{"re":.5,"im":0,"spin":True,"idx":0,"n":0},
@@ -24,7 +24,7 @@ if __name__=='__main__':
 
         "energy_info":{
             "params":{
-            "cutoff":0.0,
+            "cutoff":1,
                 "w0":3,
                 "g0":.2,
                 "v0":3,

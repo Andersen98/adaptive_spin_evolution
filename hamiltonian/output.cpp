@@ -56,15 +56,10 @@ pair<double,double> hamiltonian::get_emitter_cavity_prob(bool emitter, int cav_n
   int idx1,idx2;
   idx1 = binary_search_state(kp.first,psi_lbl);
   idx2 = binary_search_state(kp.second,psi_lbl);
-  for(const state_ket &k:psi_lbl){
-    cout << k << endl;
-  }
-  cout <<idx1 << '\t' << idx2 << endl;
+  
+
   result.first = norm(psi_lbl[idx1].amp);
   result.second = norm(psi_lbl[idx2].amp);
-
-  cout << psi_lbl[idx1] << endl;
-  cout << psi_lbl[idx2] << endl;
   
 
   return(result); 
