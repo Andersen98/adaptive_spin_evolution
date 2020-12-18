@@ -17,7 +17,7 @@ class mode_generator:
         self.num_modes=num_modes_
         self.rng=default_rng()
         self.num_modes=num_modes_
-        self.fast_time = 5*2*np.pi*dt_
+        self.fast_time = 2*np.pi/(10*w0_)
         self.long_time = 5*2*np.pi *np.sqrt(1.0/num_modes_)/spectral_energy_
     def w_g_rnd_dist(self):
         N = self.num_modes

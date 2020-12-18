@@ -1,4 +1,3 @@
-
 #include "hamiltonian.hpp"
 #include <memory>
 #include <type_traits>
@@ -32,8 +31,6 @@ void hamiltonian::merge_states(){
       auto amp_end = set_union( psi_lbl.begin(),psi_lbl.end(),delta_clean.begin(),delta_clean.end(),psi_amp.begin(),
 		     [](const state_ket &it1,const state_ket& it2){return it1 < it2; });
       psi_amp.resize(distance(psi_amp.begin(),amp_end));
-
-      append_connections();
 	    
       
     }//endif delta_size.()

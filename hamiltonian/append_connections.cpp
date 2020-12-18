@@ -1,29 +1,32 @@
 #include "hamiltonian.hpp"
 
-int hamiltonian::binary_search_lbl(const state_ket &k){
-    std::pair<state_vector_iterator,state_vector_iterator> psi_el;
-    int result = -1; //if it fails, the result is -1;
-    psi_el = std::equal_range(psi_lbl.begin(),psi_lbl.end(),k,
-			      [](auto &el,auto &val){return el < val;});
+//search sorted vector for a given ket k
+int hamiltonian::binary_search_state(const state_ket &k,const state_vector &psi_search)const{
 
-    if(psi_el.first != psi_el.second){
-      result = std::distance(psi_lbl.begin(),psi_el.first);
+    int result = -1; //if it fails, the result is -1;
+    auto psi_el = std::equal_range(psi_search.begin(),psi_search.end(),k,
+			      [](const state_ket &el,const state_ket &val){return el < val;});
+
+    if((psi_el.first != psi_el.second)&& (psi_el.first->idx != state_ket::empty_idx )  ){
+      result = std::distance(psi_search.begin(),psi_el.first);
     }
 
     return(result);
   }
 
-void hamiltonian::append_connections(){
+//psi_mixed is a sorted vector where some elements are 'colored' empty
+//and other elements are 'colored' with a defined idx.
+//each step, we find an empy element 'k', find k's connections
+//to non empy elements. then 'color' k with an idx
+void hamiltonian::append_connections(state_vector &psi_mixed ){
 
-   
-    
-  for(auto &ket : psi_amp){
+  
+  for(auto &ket : psi_mixed){
     
     if(ket.idx != state_ket::empty_idx){
       continue;
     }
     
-    ket.idx = int(state_connections.size());
     vector<dir_edge_mode> edges;   
     //apply hamiltonian
     for(int i = 0; i < NUM_MODES; i++){
@@ -34,20 +37,20 @@ void hamiltonian::append_connections(){
 
       if(raised){
 	//look for an instance
-	int vec_idx = binary_search_lbl(kp.raised);
+	int vec_idx = binary_search_state(kp.raised,psi_mixed);
 	if(vec_idx > -1){
 	  dir_edge_mode em;
-	  em.out_idx = psi_amp[vec_idx].idx;
+	  em.out_idx = psi_mixed[vec_idx].idx;
 	  em.connection_mode = i;
 	  em.raised = true;
 	  edges.push_back(em);
 	}
       }
       if(lowered){
-	int vec_idx = binary_search_lbl(kp.lowered);
+	int vec_idx = binary_search_state(kp.lowered,psi_mixed);
 	if(vec_idx>-1){
 	  dir_edge_mode em;
-	  em.out_idx = psi_amp[vec_idx].idx;
+	  em.out_idx = psi_mixed[vec_idx].idx;
 	  em.connection_mode = i;
 	  em.raised = false;
 	  edges.push_back(em); 
@@ -55,7 +58,9 @@ void hamiltonian::append_connections(){
       }
 
     }//end mode loop
-    
+
+    //'color' k
+    ket.idx = int(state_connections.size());
     state_connections.push_back(edges);
        
   }//end k loop

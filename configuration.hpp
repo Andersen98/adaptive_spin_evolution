@@ -57,9 +57,7 @@ class partial_config{
   
 public:
 
-  partial_config():rep{0}{
-    rep.fill(0);
-  }
+  partial_config():rep{}{}
   partial_config(const partial_config& c):rep{0}{
     std::copy(std::begin(c.rep),std::end(c.rep),std::begin(rep));
   }
@@ -213,26 +211,46 @@ std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p 
   }
   int rem =  num_active_modes%modes_per_line;
   int div = num_active_modes/modes_per_line;
-  std::string format_str = "%|1$-d|:|2$-d|%|8t|%|3$-d|:|4$-d|%|16t|%|5$-d|:|6$-d|%|24t|%|7$-d|:|8$-d|%|32t|%|9$-d|:|10$-d|%|40t|%|11$-d|:|12$-d|%|48t|%|13$-d|:|14$-d|%|56t|%|15$-d|:|16$-d|%|64t|%|17$-d|:|18$-d|%|72t|%|19$-d|:|20$-d|%|80t|\n";
+  std::string format_str = "%|1$-d|:%|2$-d|%|8t|%|3$-d|:%|4$-d|%|16t|%|5$-d|:%|6$-d|%|24t|%|7$-d|:%|8$-d|%|32t|%|9$-d|:%|10$-d|%|40t|%|11$-d|:%|12$-d|%|48t|%|13$-d|:%|14$-d|%|56t|%|15$-d|:%|16$-d|%|64t|%|17$-d|:%|18$-d|%|72t|%|19$-d|:%|20$-d|%|80t|\n";
 
   boost::format fmtr(format_str);
-  boost::format fmtr_single("%|1$-d|:|2$-d|");
-  int j = 0;
+  boost::format fmtr_single("%|1$-d|:%|2$-d|");
   
-  if(div){
-    for(int i = 0; i < modes_per_line*div; i++){
-      fmtr % mode_level_array[j].first;
-      fmtr % mode_level_array[j].second;
-      j++;
+
+  /*if(div){
+    for(int i = 0; i < div; i++){      
+      fmtr % mode_level_array[i*modes_per_line +0].first;
+      fmtr % mode_level_array[i*modes_per_line +0].second;
+      fmtr % mode_level_array[i*modes_per_line +1].first;
+      fmtr % mode_level_array[i*modes_per_line +1].second;
+      fmtr % mode_level_array[i*modes_per_line +2].first;
+      fmtr % mode_level_array[i*modes_per_line +2].second;
+      fmtr % mode_level_array[i*modes_per_line +3].first;
+      fmtr % mode_level_array[i*modes_per_line +3].second;
+      fmtr % mode_level_array[i*modes_per_line +4].first;
+      fmtr % mode_level_array[i*modes_per_line +4].second;
+      fmtr % mode_level_array[i*modes_per_line +5].first;
+      fmtr % mode_level_array[i*modes_per_line +5].second;
+      fmtr % mode_level_array[i*modes_per_line +6].first;
+      fmtr % mode_level_array[i*modes_per_line +6].second;
+      fmtr % mode_level_array[i*modes_per_line +7].first;
+      fmtr % mode_level_array[i*modes_per_line +7].second;
+      fmtr % mode_level_array[i*modes_per_line +8].first;
+      fmtr % mode_level_array[i*modes_per_line +8].second;
+      fmtr % mode_level_array[i*modes_per_line +9].first;
+      fmtr % mode_level_array[i*modes_per_line +9].second;
+      o << fmtr;
     }
-    o << fmtr;
+    
+
   }else if(rem){
       
-    for(int i = 0; i < rem; i++){
-      o << fmtr_single % mode_level_array[j].first % mode_level_array[j].second << "  ";
+    for(int i = modes_per_line*div; i < rem; i++){
+      //o << fmtr_single % mode_level_array[i].first % mode_level_array[i].second;
+      o << "  ";
     }
-  }
-  
+    }*/
+  o << "h";
   return o;
   
 }
@@ -329,8 +347,8 @@ public:
 
 template<int nm, int nb>
 std::ostream& operator<<( std::ostream& o, const State_Ket<nm,nb>& p ){
-  boost::format fmtr("Amp:(%|1$-e|,%|2$-e|)  Spin:%|2$-b|\n");
-  o << fmtr;
+  boost::format fmtr("Amp:(%|1$-e|,%|2$-e|)  Spin:%|3$-b|\n");
+  o << fmtr % std::real(p.amp)%std::imag(p.amp)% p.spin;
   o << p.lbl;
   return o;
 

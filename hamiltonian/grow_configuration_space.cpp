@@ -24,7 +24,13 @@ bool hamiltonian::grow_configuration_space(int idx){
       }
       if( (kp.lowered.idx != state_ket::null_idx) && (magnitude*g[level+1][j] > params.energy_cutoff)){
 	psi_delta.push_back(kp.lowered);
-      }	
+      }
+
+      //Debug
+      if(kp.raised.idx==state_ket::null_idx){
+	
+	mode_cap_exceeded[j] += 1;
+      }
       j++;
     }
    

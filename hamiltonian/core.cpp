@@ -1,9 +1,9 @@
 #include "hamiltonian.hpp"
 
 void hamiltonian::run_step(double dt){
-    mode_cap_exceeded.clear();
-    psi_delta.clear();
-    psi_delta.reserve(NUM_MODES*psi_amp.size());
+  mode_cap_exceeded.fill(0);
+  psi_delta.resize(0);
+  psi_delta.reserve(NUM_MODES*psi_amp.size());
 
     //TODO: Maybe add a threshold for number of runs where the
     //configuration has not grown. 
@@ -18,6 +18,7 @@ void hamiltonian::run_step(double dt){
     
     merge_states();
 
+    append_connections(psi_amp);
     
     evolve_space(dt);
 

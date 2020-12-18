@@ -1,11 +1,11 @@
 #include "hamiltonian.hpp"
 
 
-hamiltonian::hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},old2new{0},new2old{0},params(params_),num_levels(1<<NUM_BITS),psi_lbl(0),psi_amp(0),next_idx(0),state_connections(){
-
-       
-    vector<pair<int,double>> idx_g_pairs(NUM_MODES);
-    for(int i=0;i< NUM_MODES;i++){
+hamiltonian::hamiltonian(const param_vals &params_):g{{}},m{},params(params_),new2old{},old2new{},num_levels(1<<NUM_BITS),psi_delta(0),psi_lbl(0),psi_amp(0),state_connections(0),mode_cap_exceeded{}{
+  
+  
+  vector<pair<int,double>> idx_g_pairs(NUM_MODES);
+  for(int i=0;i< NUM_MODES;i++){
       idx_g_pairs[i] = std::make_pair(i,params.mode_couplings[i]);
     }
     
@@ -43,24 +43,19 @@ hamiltonian::hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},old2n
       k.set_mode(mode,sk.n);
       k.spin = sk.spin;
       k.amp = sk.amp;
-      psi_delta.push_back(k);
+      k.idx = state_ket::empty_idx;
+      psi_lbl.push_back(k);
     }
 
-    //start with a single root state.
-    sort(psi_delta.begin(),psi_delta.end(),[](auto &it1,auto &it2){return it1<it2;});
-    state_ket k = psi_delta[0];
-    psi_lbl.push_back(k);
-    //delete psi_delta[0]
-    psi_delta.erase(psi_delta.begin());
-
-    //expects psi_delta to be sorted
+    
+    sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
+    
     setup_connections();
     
     normalize_state(psi_lbl);
-    sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
-    psi_amp.resize(psi_lbl.size(),k);
+    psi_amp.resize(psi_lbl.size());
     copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-    sort(psi_amp.begin(),psi_amp.end(),[](auto &it1,auto &it2){return norm(it1.amp) > norm(it2.amp);});
+    sort(psi_amp.begin(),psi_amp.end(),[](const state_ket &it1,const state_ket &it2){return norm(it1.amp) > norm(it2.amp);});
     
     
   }
@@ -70,24 +65,24 @@ hamiltonian::hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},old2n
   void hamiltonian::setup_connections(){
 
     //1 root node in psi_lbl
-    psi_lbl[0].idx = next_idx++;
+    psi_lbl[0].idx = state_connections.size();
     vector<dir_edge_mode> empty_edge(0);
     state_connections.push_back(empty_edge);
      
-    for(auto &k: psi_delta){
-      vector<dir_edge_mode> edges;
-      k.idx = next_idx++;
-      
-      //apply hamiltonian
-      for(int i = 0; i < NUM_MODES; i++){
+    for(auto &k: psi_lbl){
+      if(k.idx == state_ket::empty_idx){
+	vector<dir_edge_mode> edges;
 	
-	ket_pair kp = get_connected_states(k,i);
-	bool raised = kp.raised.idx==state_ket::empty_idx;
-	bool lowered = kp.lowered.idx==state_ket::empty_idx;
+	//apply hamiltonian
+	for(int i = 0; i < NUM_MODES; i++){
+	
+	  ket_pair kp = get_connected_states(k,i);
+	  bool raised = kp.raised.idx!=state_ket::null_idx;
+	  bool lowered = kp.lowered.idx!=state_ket::null_idx;
 	 
 	if(raised){
 	  //look for an instance
-	  int vec_idx = binary_search_lbl(kp.raised);
+	  int vec_idx = binary_search_state(kp.raised,psi_lbl);
 	  if(vec_idx>-1){
 	    dir_edge_mode em;
 	    em.out_idx = psi_lbl[vec_idx].idx;
@@ -98,7 +93,7 @@ hamiltonian::hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},old2n
 	  
 	}
 	if(lowered){
-	  int vec_idx = binary_search_lbl(kp.lowered);
+	  int vec_idx = binary_search_state(kp.lowered,psi_lbl);
 	  if(vec_idx>-1){
 	    dir_edge_mode em;
 	    em.out_idx = psi_lbl[vec_idx].idx;
@@ -109,10 +104,13 @@ hamiltonian::hamiltonian(const param_vals &params_):one_i(0,1),g{{0}},m{0},old2n
 	}
 	
       }//end mode loop
+
+	k.idx = int(state_connections.size());
+	state_connections.push_back(edges);
       
-      state_connections.push_back(edges);
-      psi_lbl.push_back(k);
-    }//end k loop
+      }//end k loop
+
+    }
     
   }
 

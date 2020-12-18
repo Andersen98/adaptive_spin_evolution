@@ -5,15 +5,37 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
-#include <rapidjson/writer.h>
+#include <rapidjson/prettywriter.h>
 #include <cstdio>
 #include <array>
+#include <algorithm>
 #include <complex>
 using namespace std;
 using boost::format;
 using namespace rapidjson;
 namespace adaptive{
 
+
+  void write_two_vs_time_header(ofstream &o, const param_vals &p, string q1, string q2){
+    o <<format("PSTART~%|1$-d| DSTART~%|2$-d|\n") %5 %7; 
+    format lnBrk("%|88T=|\n");
+    o << lnBrk;
+    o << format("%|1$=88s|\n")%"RUN BEGIN";
+    o << lnBrk;
+    o << format("Step(i/%|4$-d|)%|13T~|%|1$-s|%|38T~|%|2$-s|%|63T~|%|3$-s|%|88T~|\n") % "Time" % q1 % q2%p.N;
+    o << lnBrk;   
+  }
+
+  void write_two_vs_time(ofstream &o, const param_vals &p, int id, double time,
+				double q1, double q2){
+     format
+      popFmt("%|1$-d|/%|2$-d|%|13t|%|3$-1.14e|%|38t|%|4$-1.14e|%|63t|%|5$-1.14e|\n");
+
+    o << popFmt % id % p.N % time %q1 %q2; 
+    
+  }
+
+  
   void write_spin_population_header(ofstream &o, const param_vals &p){
   o <<format("PSTART~%|1$-d| DSTART~%|2$-d|\n") %5 %7; 
   format lnBrk("%|88T=|\n");
@@ -74,14 +96,11 @@ namespace adaptive{
   }
 
   void write_stats(std::ofstream &o, const param_vals &p, int id, double time,
-			     int config_space, std::vector<int> exceeded){
+		   int config_space, std::array<int,NUM_MODES> exceeded){
     string exStr = "";
-    if(exceeded.size()){
-      for(auto &x: exceeded){
-	exStr += std::to_string(x)+"/";
-      }
-    }else{
-      exStr = "N/A";
+    
+    for(auto &x: exceeded){
+      	exStr += std::to_string(x)+"/";
     }
     
     format popFmt("%|1$-d|/%|2$-d|%|13t|%|3$-1.14e|%|38t|%|4$-1.14e|%|63t|%|5$-1.14e|\n");
@@ -93,8 +112,9 @@ namespace adaptive{
   void write_state(std::string out_path, const hamiltonian &h){
 
     const array<int,NUM_MODES> &new2old = h.get_new2old();
-    const auto & state_vector = h.get_state_vector();
-    
+    const vector<State_Ket<NUM_MODES,NUM_BITS>> & state_vector_ = h.get_state_vector();
+    vector<State_Ket<NUM_MODES,NUM_BITS>> state_vector (state_vector_);
+    sort(state_vector.begin(),state_vector.end(),[](auto &it1,auto&it2){return it1.idx < it2.idx;});
     
     //construct document
     Document d;
@@ -114,7 +134,7 @@ namespace adaptive{
 	int level = state_vector[i].get_mode(j);
 	if(level > 0){
 	  Value el(kObjectType);
-	  el.AddMember("idx",new2old[j], allocator);
+	  el.AddMember("mode",new2old[j], allocator);
 	  el.AddMember("level", level,allocator);
 
 	  active_modes.PushBack(el,allocator);
@@ -123,17 +143,18 @@ namespace adaptive{
       }
 
       Value state_ket_v(kObjectType);
-      state_ket_v.AddMember("active_modes",active_modes,allocator);
+      state_ket_v.AddMember("order_found",state_vector[i].idx,allocator);
       state_ket_v.AddMember("re",re,allocator);
       state_ket_v.AddMember("im",im,allocator);
       state_ket_v.AddMember("spin",spin,allocator);
+      state_ket_v.AddMember("active_modes",active_modes,allocator);
       
       state_vector_v.PushBack(state_ket_v,allocator);
       
     }
 
     //add state_vector array to document
-
+    d.AddMember("size",int(state_vector.size()),allocator);
     d.AddMember("state_vector",state_vector_v,allocator);
 
     //write document to stream
@@ -144,7 +165,7 @@ namespace adaptive{
     char write_buffer[64000];
     FileWriteStream os(fp, write_buffer, sizeof(write_buffer));
 
-    Writer<FileWriteStream> writer(os);
+    PrettyWriter<FileWriteStream> writer(os);
     d.Accept(writer);
 
     fclose(fp);

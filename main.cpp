@@ -48,23 +48,28 @@ int main(int argc, char * argv[]){
 
 
   //setup output stream
-  string output_file = params.output_directory+to_string(params.run_id)+".out";
+  string output_file = params.output_directory+to_string(params.run_id)+".full_spin_pop";
   string stats_file = params.output_directory+to_string(params.run_id)+".stats";
   string mode_file = params.output_directory+to_string(params.run_id)+".modes";
   string final_state_file = params.output_directory+to_string(params.run_id)+".end_state";
+  string cavity_file = params.output_directory+to_string(params.run_id)+".cavity_emitter_pair";
   std::ofstream of(output_file.c_str());
   std::ofstream of_stats(stats_file.c_str());
   std::ofstream of_mode(mode_file.c_str());
+  std::ofstream of_cavity(cavity_file.c_str());
   vector<int> exceeded(0);
   if(of&& of_stats){
     adaptive::write_spin_population_header(of,params);
     adaptive::write_stats_header(of_stats,params);
     adaptive::write_mode_pop_header(of_mode,params);
+    adaptive::write_two_vs_time_header(of_cavity, params,"Emitter Prob.","Cavity Prob.");
     for(int i = 0; i <params.N; i++){
       std::pair<double,double> pop = h.get_spin_pop();
       adaptive::write_spin_population_run(of,params,i+1,i*dt,pop.first,pop.second);
-      adaptive::write_stats(of_stats,params, i+1, i*dt,h.get_psi_size(), exceeded);
-      //params.write_mode_pop(of_mode,i+1,i*dt,h.get_modeLbl_quanta_pop());
+      adaptive::write_stats(of_stats,params, i+1, i*dt,h.get_psi_size(), h.mode_cap_exceeded);
+
+      std::pair<double,double> em_cav = h.get_emitter_cavity_prob(true, 0);
+      adaptive::write_two_vs_time(of_cavity,params,i+1, i*dt, em_cav.first, em_cav.second);
       h.run_step(dt);
     }
   }
