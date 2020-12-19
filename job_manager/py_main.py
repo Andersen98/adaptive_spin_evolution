@@ -17,11 +17,7 @@ if __name__=='__main__':
                      }
                     },
         "time_params":{"dt":.01,"tf":70},
-
-    "initial_state":
-        [{"re":1,"im":0,"spin":True,"idx":0,"n":0},
-         {"re":0,"im":0,"spin":False,"idx":0,"n":1}],
-
+        
         "energy_info":{
             "params":{
             "cutoff":.0004054,
@@ -34,6 +30,13 @@ if __name__=='__main__':
           
         }
     }
+
+    initial_state ={
+        "initial_state":
+        [{"re":1,"im":0,"spin":True,"idx":0,"n":0},
+         {"re":0,"im":0,"spin":False,"idx":0,"n":1}],
+    }
+    
     if not os.path.exists(params["run_info"]["system_paths"]["code_output_dir"]):
         os.makedirs(params["run_info"]["system_paths"]["code_output_dir"])
     if not os.path.exists(params["run_info"]["system_paths"]["code_output_dir"]+"figs/"):
