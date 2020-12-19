@@ -16,11 +16,11 @@ if __name__=='__main__':
                      "excecutable":"/home/ethan/code/adaptive_spin",
                      }
                     },
-        "time_params":{"dt":.01,"tf":700},
+        "time_params":{"dt":.01,"tf":70},
 
     "initial_state":
-        [{"re":1,"im":0,"spin":True,"idx":0,"n":6},
-         {"re":0,"im":0,"spin":False,"idx":0,"n":7}],
+        [{"re":1,"im":0,"spin":True,"idx":0,"n":0},
+         {"re":0,"im":0,"spin":False,"idx":0,"n":1}],
 
         "energy_info":{
             "params":{
@@ -28,7 +28,8 @@ if __name__=='__main__':
                 "w0":3,
                 "g0":.2,
                 "v0":3,
-                "energy_spectral_density":.01
+                "energy_spectral_density":.01,
+                
             },
           
         }
