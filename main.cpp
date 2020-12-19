@@ -39,8 +39,6 @@ int main(int argc, char * argv[]){
   
   
   
-
-  
   
   //make hamiltonian
   hamiltonian h(params);
@@ -64,13 +62,14 @@ int main(int argc, char * argv[]){
     adaptive::write_mode_pop_header(of_mode,params);
     adaptive::write_two_vs_time_header(of_cavity, params,"Emitter Prob.","Cavity Prob.");
     for(int i = 0; i <params.N; i++){
+      h.run_step(dt);
       std::pair<double,double> pop = h.get_spin_pop();
       adaptive::write_spin_population_run(of,params,i+1,i*dt,pop.first,pop.second);
       adaptive::write_stats(of_stats,params, i+1, i*dt,h.get_psi_size(), h.mode_cap_exceeded);
 
-      std::pair<double,double> em_cav = h.get_emitter_cavity_prob(true, 0);
+      std::pair<double,double> em_cav = h.get_emitter_cavity_prob();
       adaptive::write_two_vs_time(of_cavity,params,i+1, i*dt, em_cav.first, em_cav.second);
-      h.run_step(dt);
+  
     }
   }
 

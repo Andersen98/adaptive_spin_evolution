@@ -2,7 +2,7 @@
 
 
 hamiltonian::hamiltonian(const param_vals &params_):g{{}},m{},params(params_),new2old{},old2new{},num_levels(1<<NUM_BITS),psi_delta(0),psi_lbl(0),psi_amp(0),state_connections(0),mode_cap_exceeded{}{
-  
+
   
   vector<pair<int,double>> idx_g_pairs(NUM_MODES);
   for(int i=0;i< NUM_MODES;i++){

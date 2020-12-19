@@ -1,7 +1,17 @@
 #include "hamiltonian.hpp"
 
+
+hamiltonian::ket_pair::ket_pair():raised(),lowered(){}
+hamiltonian::ket_pair::ket_pair(const state_ket &k){
+  raised = k;
+  lowered = k;
+  raised.amp = 0;
+  lowered.amp = 0;
+}
+
+
 void hamiltonian::run_step(double dt){
-  mode_cap_exceeded.fill(0);
+  mode_cap_exceeded.fill(-1);
   psi_delta.resize(0);
   psi_delta.reserve(NUM_MODES*psi_amp.size());
 
@@ -26,7 +36,7 @@ void hamiltonian::run_step(double dt){
     psi_lbl.resize(psi_amp.size());
     copy(psi_amp.begin(),psi_amp.end(),psi_lbl.begin());
     sort(psi_amp.begin(),psi_amp.end(),
-	 [](auto &it1,auto &it2){return norm(it1.amp) < norm(it2.amp);});
+	 [](auto &it1,auto &it2){return norm(it1.amp) > norm(it2.amp);});
   }
 
 hamiltonian::ket_pair hamiltonian::get_connected_states(const state_ket &k,const int mode){

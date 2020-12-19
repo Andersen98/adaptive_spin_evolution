@@ -19,7 +19,8 @@ void hamiltonian::merge_states(){
       state_vector delta_clean(psi_delta.size());
       //append unique copy of psi_delta to end of psi_lbl
       state_vector::iterator delta_end =
-	unique_copy(psi_delta.begin(),psi_delta.end(),
+	unique_copy(std::make_move_iterator(psi_delta.begin()),
+		    std::make_move_iterator(psi_delta.end()),
 		    delta_clean.begin(),
 		    [](const state_ket &it1,const state_ket &it2)
 		    {return it1==it2;});

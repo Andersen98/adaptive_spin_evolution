@@ -206,18 +206,16 @@ std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p 
     int level = p.get_mode(i);
     if(level > 0){
       num_active_modes++;
-      mode_level_array[num_active_modes-1] = make_pair<int,int>(std::forward<int&&>(i),std::forward<int&&>(level)) ;
+      mode_level_array[num_active_modes-1] = make_pair(i,level) ;
     }
   }
   int rem =  num_active_modes%modes_per_line;
   int div = num_active_modes/modes_per_line;
-  std::string format_str = "%|1$-d|:%|2$-d|%|8t|%|3$-d|:%|4$-d|%|16t|%|5$-d|:%|6$-d|%|24t|%|7$-d|:%|8$-d|%|32t|%|9$-d|:%|10$-d|%|40t|%|11$-d|:%|12$-d|%|48t|%|13$-d|:%|14$-d|%|56t|%|15$-d|:%|16$-d|%|64t|%|17$-d|:%|18$-d|%|72t|%|19$-d|:%|20$-d|%|80t|\n";
+  std::string format_str = "%|1$-d|:%|2$-d|%|8t|%|3$-d|:%|4$-d|%|16t|%|5$-d|:%|6$-d|%|24t|%|7$-d|:%|8$-d|%|32t|%|9$-d|:%|10$-d|%|40t|%|11$-d|:%|12$-d|%|48t|%|13$-d|:%|14$-d|%|56t|%|15$-d|:%|16$-d|%|64t|%|17$-d|:%|18$-d|%|72t|%|19$-d|:%|20$-d|\n";
 
-  boost::format fmtr(format_str);
-  boost::format fmtr_single("%|1$-d|:%|2$-d|");
-  
-
-  /*if(div){
+  boost::format fmtr(format_str.c_str());
+ 
+  if(div){
     for(int i = 0; i < div; i++){      
       fmtr % mode_level_array[i*modes_per_line +0].first;
       fmtr % mode_level_array[i*modes_per_line +0].second;
@@ -244,13 +242,13 @@ std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p 
     
 
   }else if(rem){
-      
+    boost::format fmtr_single("%|1$-d|:%|2$-d|");
     for(int i = modes_per_line*div; i < rem; i++){
-      //o << fmtr_single % mode_level_array[i].first % mode_level_array[i].second;
+      o << fmtr_single % mode_level_array[i].first % mode_level_array[i].second;
       o << "  ";
     }
-    }*/
-  o << "h";
+  }
+  
   return o;
   
 }
@@ -268,23 +266,26 @@ class State_Ket{
   friend std::ostream& operator<<( std::ostream&, const State_Ket<num_modes_,num_bits>& p );
 public:
 
-  State_Ket():spin(false),amp(0.0),lbl(),idx(empty_idx){}
-  //copy constructor
-  State_Ket(const State_Ket&c ):idx(c.idx),spin(c.spin),amp(c.amp),lbl(c.lbl){}
-  
   typedef std::complex<double> Amplitude;
   typedef partial_config<num_modes,num_bits> Label;
   typedef bool Spin_Type;
 
+  constexpr static int  num_modes_int = num_modes;
+  constexpr static int max_level_int = 1<<num_bits -1;
+  constexpr static int null_idx = -1;
+  constexpr static int empty_idx = -2;
+  
   Spin_Type spin;
   Amplitude amp;
   Label lbl;
   //idx is the absolute labeling
   int idx;
-  constexpr static int  num_modes_int = num_modes;
-  constexpr static int max_level_int = 1<<num_bits -1;
-  constexpr static int null_idx = -1;
-  constexpr static int empty_idx = -2;
+  State_Ket():spin(false),amp(0,0),lbl(),idx(empty_idx){}
+  //copy constructor
+  State_Ket(const State_Ket&c ):idx(c.idx),spin(c.spin),amp(c.amp),lbl(c.lbl){}
+  
+  
+  
   void add(State_Ket &c){
     amp += c.amp;
   }

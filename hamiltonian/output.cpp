@@ -26,42 +26,35 @@ pair<double,double> hamiltonian::get_spin_pop()const{
 
 }
 
-pair<double,double> hamiltonian::get_emitter_cavity_prob(bool emitter, int cav_n)const{
+pair<double,double> hamiltonian::get_emitter_cavity_prob()const{
   pair<double,double> result;
-  pair<state_ket,state_ket> kp;
-  state_ket k1,k2;
-  k1.set_mode(0,cav_n);
-  k1.spin = emitter;
+  int num_quanta = -1;
+  //look for initial state (idx 0 and 1 are assumed to be on same N manifold )
+  for(const auto &k:psi_lbl){
 
-  if(emitter){
-    //k1 is emmitter
-    //k2 is cav
-    //corresponding stae is spin down +1 cav
-    k2.set_mode(0,cav_n+1);
-    k2.spin = false;
+    if(k.idx >1){
+      continue;
+    }else{
+      assert( (k.idx==1||k.idx==0));
+      int mode_level = k.get_mode(0);
+      if(k.spin){
+	result.first = norm(k.amp);
+	if(num_quanta >-1){
+	  assert( (mode_level+1 == num_quanta));
+	}
+	num_quanta = 1 + mode_level;
+      }else{
+	result.second = norm(k.amp);
+	if(num_quanta > -1){
+	  assert( mode_level == num_quanta);
+	  
+	}
+      }
+
+    }
     
-    kp.first = k1;
-    kp.second = k2;
-  }else{
-    //k2 is emmiter
-    //k1 is cav
-    assert( cav_n > 0);
-    k2.set_mode(0, cav_n-1);
-    k2.spin = true;
-
-    kp.first = k2;
-    kp.second = k1;
   }
-
-  int idx1,idx2;
-  idx1 = binary_search_state(kp.first,psi_lbl);
-  idx2 = binary_search_state(kp.second,psi_lbl);
   
-
-  result.first = norm(psi_lbl[idx1].amp);
-  result.second = norm(psi_lbl[idx2].amp);
-  
-
   return(result); 
 
 

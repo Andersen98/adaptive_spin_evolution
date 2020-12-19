@@ -23,46 +23,49 @@ void hamiltonian::append_connections(state_vector &psi_mixed ){
   
   for(auto &ket : psi_mixed){
     
-    if(ket.idx != state_ket::empty_idx){
-      continue;
-    }
+    if(ket.idx == state_ket::empty_idx){
+     
     
-    vector<dir_edge_mode> edges;   
-    //apply hamiltonian
-    for(int i = 0; i < NUM_MODES; i++){
+    
+      vector<dir_edge_mode> edges;   
+      //apply hamiltonian
+      for(int i = 0; i < NUM_MODES; i++){
 	 
-      ket_pair kp = get_connected_states(ket,i);
-      bool raised = kp.raised.idx==state_ket::empty_idx;
-      bool lowered = kp.lowered.idx==state_ket::empty_idx;
+	ket_pair kp = get_connected_states(ket,i);
+	bool raised = kp.raised.idx==state_ket::empty_idx;
+	bool lowered = kp.lowered.idx==state_ket::empty_idx;
 
-      if(raised){
-	//look for an instance
-	int vec_idx = binary_search_state(kp.raised,psi_mixed);
-	if(vec_idx > -1){
-	  dir_edge_mode em;
-	  em.out_idx = psi_mixed[vec_idx].idx;
-	  em.connection_mode = i;
-	  em.raised = true;
-	  edges.push_back(em);
+	if(raised){
+	  //look for an instance
+	  int vec_idx = binary_search_state(kp.raised,psi_mixed);
+	  if(vec_idx > -1){
+	    dir_edge_mode em;
+	    em.out_idx = psi_mixed[vec_idx].idx;
+	    em.connection_mode = i;
+	    em.raised = true;
+	    edges.push_back(em);
+	  }
 	}
-      }
-      if(lowered){
-	int vec_idx = binary_search_state(kp.lowered,psi_mixed);
-	if(vec_idx>-1){
-	  dir_edge_mode em;
-	  em.out_idx = psi_mixed[vec_idx].idx;
-	  em.connection_mode = i;
-	  em.raised = false;
-	  edges.push_back(em); 
+	if(lowered){
+	  int vec_idx = binary_search_state(kp.lowered,psi_mixed);
+	  if(vec_idx>-1){
+	    dir_edge_mode em;
+	    em.out_idx = psi_mixed[vec_idx].idx;
+	    em.connection_mode = i;
+	    em.raised = false;
+	    edges.push_back(em); 
+	  }
 	}
-      }
 
-    }//end mode loop
+      }//end mode loop
 
-    //'color' k
-    ket.idx = int(state_connections.size());
-    state_connections.push_back(edges);
-       
+    
+      //'color' k
+      ket.idx = int(state_connections.size());
+
+      
+      state_connections.push_back(edges);
+    }//end if empty_idx
   }//end k loop
 }
      

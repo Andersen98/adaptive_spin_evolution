@@ -1,6 +1,5 @@
 #include "hamiltonian.hpp"
 
-
 //returns true to halt evaluation
 bool hamiltonian::grow_configuration_space(int idx){
     bool stop = false;

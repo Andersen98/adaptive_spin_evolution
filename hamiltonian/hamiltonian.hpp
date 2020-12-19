@@ -52,11 +52,8 @@ class hamiltonian{
   struct ket_pair{
     state_ket raised;
     state_ket lowered;
-    ket_pair(){}
-    ket_pair(const state_ket &k){
-      raised = k;
-      lowered = k;
-    }
+    ket_pair();
+    ket_pair(const state_ket &k);
   };
   
   array<array<double,NUM_MODES>, (1<<NUM_BITS)> g;
@@ -106,7 +103,7 @@ public:
   hamiltonian(const param_vals &params_);
   
   //output.cpp
-  pair<double,double> get_emitter_cavity_prob(bool em, int cav)const;
+  pair<double,double> get_emitter_cavity_prob()const;
   const state_vector &get_state_vector()const;
   int get_psi_size()const;
   pair<double,double> get_spin_pop()const;

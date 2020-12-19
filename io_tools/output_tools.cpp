@@ -4,9 +4,12 @@
 #include <boost/format.hpp>
 
 #include <rapidjson/document.h>
-#include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
-#include <cstdio>
+#include <rapidjson/ostreamwrapper.h>
+#include <fstream>
+
+
+
 #include <array>
 #include <algorithm>
 #include <complex>
@@ -99,8 +102,11 @@ namespace adaptive{
 		   int config_space, std::array<int,NUM_MODES> exceeded){
     string exStr = "";
     
-    for(auto &x: exceeded){
+    for(int i = 0; i < NUM_MODES; i++){
+      int x = exceeded[i];
+      if(x>-1){
       	exStr += std::to_string(x)+"/";
+      }
     }
     
     format popFmt("%|1$-d|/%|2$-d|%|13t|%|3$-1.14e|%|38t|%|4$-1.14e|%|63t|%|5$-1.14e|\n");
@@ -159,16 +165,13 @@ namespace adaptive{
 
     //write document to stream
     
-    FILE* fp = fopen(out_path.c_str(),"w");
+    ofstream ofs(out_path.c_str());
+    OStreamWrapper osw(ofs);
 
-
-    char write_buffer[64000];
-    FileWriteStream os(fp, write_buffer, sizeof(write_buffer));
-
-    PrettyWriter<FileWriteStream> writer(os);
+    PrettyWriter<OStreamWrapper> writer(osw);
     d.Accept(writer);
 
-    fclose(fp);
+    ofs.close();
     
   }
   
