@@ -1,7 +1,8 @@
-objects = main.o input_tools.o output_tools.o
+objects = main.o input_tools.o output_tools.o program_option_tools.o
 flags = -fPIC -std=c++20 -ggdb3 -O0 -Wall 
 dflags = -DNUM_MODES=2 -DNUM_BITS=8
-hamiltonian_objects = grow_configuration_space.o evolve_space.o append_connections.o merge_states.o setup.o core.o output.o
+hamiltonian_objects = grow_configuration_space.o evolve_space.o append_connections.o \
+merge_states.o setup.o core.o output.o runtime.o 
 objects += ${hamiltonian_objects}
 #-Wl,-t
 pyket_objects += ${hamiltonian_objects} pyket.o input_tools.o
@@ -9,14 +10,14 @@ pyket_flags += ${dflags} ${flags}  -shared -I extern/pybind11/include `python-co
 pyket_name = pyket`python3-config --extension-suffix`
 
 pyket: ${pyket_objects}
-	g++ ${pyket_flags} -o job_manager/${pyket_name} ${pyket_objects} -lboost_program_options
+	g++ ${pyket_flags} -o pyket/${pyket_name} ${pyket_objects}
 pyket.o: pyket/pyket.cpp hamiltonian/hamiltonian.hpp configuration.hpp
 	g++ ${pyket_flags} -c pyket/pyket.cpp
 
-
 adaptive_spin: ${objects}
 	g++ ${dflags} ${flags}  -o adaptive_spin ${objects} -lboost_program_options  
-main.o: configuration.hpp io_tools/input_tools.hpp io_tools/output_tools.hpp main.cpp hamiltonian/hamiltonian.hpp spin_density_matrix.hpp
+
+main.o: configuration.hpp io_tools/input_tools.hpp io_tools/output_tools.hpp main.cpp hamiltonian/hamiltonian.hpp 
 	g++ ${dflags} ${flags} -c main.cpp
 input_tools.o: io_tools/input_tools.hpp io_tools/input_tools.cpp
 	g++ ${dflags} ${flags} -c io_tools/input_tools.cpp
@@ -41,10 +42,17 @@ setup.o:configuration.hpp hamiltonian/hamiltonian.hpp hamiltonian/setup.cpp io_t
 core.o: configuration.hpp hamiltonian/hamiltonian.hpp hamiltonian/core.cpp
 	g++ ${dflags} ${flags} -c hamiltonian/core.cpp
 
+runtime.o: configuration.hpp hamiltonian/hamiltonian.hpp hamiltonian/runtime.cpp
+	g++ ${dflags} ${flags} -c hamiltonian/runtime.cpp
+
 output.o:configuration.hpp hamiltonian/hamiltonian.hpp hamiltonian/output.cpp
 	g++ ${dflags} ${flags} -c hamiltonian/output.cpp
 
+program_options_tools.o: io_tools/input_tools.hpp io_tools/ program_option_tools.hpp \
+io_tools/program_options_tools.cpp 
+	g++ ${dflags} ${flags} -c io_tools/program_option_tools.cpp
+
 clean:
-	rm -f *.o adaptive_spin job_manager/${pyket_name}
+	rm -f *.o adaptive_spin pyket/${pyket_name}
 
 

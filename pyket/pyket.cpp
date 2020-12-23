@@ -47,12 +47,14 @@ PYBIND11_MODULE(pyket,m){
     .def(py::init([](const std::string &json_arg){
       return std::unique_ptr<hamiltonian>(new hamiltonian(json_arg));
     }))
-    .def("run_step",&hamiltonian::run_step)
+    .def("run_grow_evolve",&hamiltonian::run_grow_evolve)
+    .def("run_grow",&hamiltonian::run_grow)
+    .def("run_grow",&hamiltonian::run_evolve)
     .def("get_state_vector", &hamiltonian::get_state_vector)
     .def("get_spin_pop",&hamiltonian::get_spin_pop)
     .def("get_emitter_cavity_prob",&hamiltonian::get_emitter_cavity_prob)
     .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop)
-    .def("reset_state",&hamiltonian::reset_state)
+    .def("set_zero_except_init",&hamiltonian::set_zero_except_init)
     .def("run_evolve",&hamiltonian::run_evolve)
     .def("set_epsilon",&hamiltonian::set_epsilon);
   

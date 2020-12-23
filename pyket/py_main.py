@@ -72,6 +72,7 @@ if __name__=='__main__':
     
     epsilon = .0004054
     for i in range(1000):
+        
         up, down = h.get_spin_pop()
         print("C++     "+str(dt*i) + "  " + str(up) + "  " +str(down))
         h.run_step(dt)

@@ -95,15 +95,19 @@ class hamiltonian{
   static void normalize_state(state_vector &p);
 public:
     array<int,NUM_MODES> mode_cap_exceeded;
-  //core.cpp
-  void run_step(double dt);
-  void set_epsilon(double e);
+  
   
   //setup.cpp
   hamiltonian(const param_vals &params_);
   hamiltonian(const std::string &json_arg);
   
 
+  //runtime.cpp
+  void run_grow_evolve(double dt);
+  void run_grow();
+  void run_evolve(double dt);
+  void set_epsilon(double e);
+  void set_zero_except_init();
   
   
   //output.cpp

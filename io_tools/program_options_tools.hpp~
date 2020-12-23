@@ -1,0 +1,12 @@
+#ifndef ADAPTIVE_PROGRAM_OPTIONS_TOOLS
+#define ADAPTIVE_PROGRAM_OPTIONS_TOOLS
+
+#include <boost/program_options.hpp>
+#include <cassert>
+
+
+
+
+
+
+#endif // ADAPTIVE_PROGRAM_OPTIONS_TOOLS
