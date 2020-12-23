@@ -101,6 +101,7 @@ public:
   
   //setup.cpp
   hamiltonian(const param_vals &params_);
+  hamiltonian(const std::string &json_arg);
   
   //output.cpp
   pair<double,double> get_emitter_cavity_prob()const;

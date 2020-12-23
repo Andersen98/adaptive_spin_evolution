@@ -1,4 +1,5 @@
 #include "input_tools.hpp"
+#include <sstream>
 
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
@@ -118,6 +119,12 @@ bool param_vals::load_json(std::ifstream &ifs){
 }
 
 
+bool param_vals::load_json_str(string &s){
+
+  istringstream ifs;
+  ifs.str(s);
+  return(load_json(ifs));
+}
 		
 
 //returns exit status

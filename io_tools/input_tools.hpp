@@ -37,7 +37,7 @@ struct param_vals{
 
   //rapid json
   bool load_json(std::ifstream &ifs);
-  
+  bool load_json_str(std::string &s);
   
   //first save, then append output to file 
   void save(std::ofstream &o);
