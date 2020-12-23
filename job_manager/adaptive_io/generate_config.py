@@ -40,7 +40,7 @@ class mode_generator:
     
 
 def generate_json(params,print_command=True,dump_template=False):
-    result = None,None,None #arg_list,conf,json_path
+    result = None,None,None #conf,json_path,json_string
     if(dump_template):
         example_dict = {
             "run_info":{"run_id":1429,"num_modes":2,"system_paths":
@@ -101,12 +101,14 @@ def generate_json(params,print_command=True,dump_template=False):
         #                     Write Input Energies                        #
         
         #arguments for adaptive spin
+        json_str = ""
         run_id = params["run_info"]["run_id"]
         json_out = params["run_info"]["system_paths"]["code_output_dir"] + str(run_id)+".json"
+        
         with open(json_out,"w") as f:
-            json_string = json.dumps(params,indent=4)
-            f.write(json_string)
-            print(json_string)
+            json_str = json.dumps(params,indent=4)
+            f.write(json_str)
+            print(json_str)
         print(json_out)
     
             
@@ -153,7 +155,7 @@ def generate_json(params,print_command=True,dump_template=False):
         #                         End Section                             #
         #=================================================================#
     
-        result = (argList,params,json_out)
+        result = (params,json_out,json_str)
 
     return result
    

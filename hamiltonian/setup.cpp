@@ -1,12 +1,7 @@
 #include "hamiltonian.hpp"
+#include "io_tools/input_tools.hpp"
+hamiltonian::hamiltonian(const std::string &json_str):hamiltonian(load_json_str(json_str)){}
 
-hamiltonian::hamiltonian(const std::string &json_str){
-
-  param_vals p;
-  p.load_json_str(json_str);
-  hamiltonian(p);
-
-}
 hamiltonian::hamiltonian(const param_vals &params_):g{{}},m{},params(params_),new2old{},old2new{},num_levels(1<<NUM_BITS),psi_delta(0),psi_lbl(0),psi_amp(0),state_connections(0),mode_cap_exceeded{}{
 
   

@@ -1,6 +1,6 @@
 #include "input_tools.hpp"
 #include <sstream>
-
+#include <istream>
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace rj = rapidjson;
@@ -32,7 +32,7 @@ void param_vals::save(std::ofstream &o){
     
   
   pt::ptree mode_values;
-  for(int i = 0; i < mode_energies.size(); i++){
+  for(uint i = 0; i < mode_energies.size(); i++){
     pt::ptree child;
     child.put("energy",mode_energies[i]);
     child.put("coupling",mode_couplings[i]);
@@ -55,7 +55,7 @@ void param_vals::save(std::ofstream &o){
 
 
 
-bool param_vals::load_json(std::ifstream &ifs){
+bool param_vals::load_json(std::istream &ifs){
   initial_state.clear();
 
   bool result = false;
@@ -110,20 +110,19 @@ bool param_vals::load_json(std::ifstream &ifs){
   for(rj::SizeType i = 0; i < m.Size(); i ++){
     mode_energies[i] = m[i]["w"].GetDouble();
     mode_couplings[i] = m[i]["g"].GetDouble();
-  }
-  ifs.close();
-  
+  }  
   
   return(result);
 
 }
 
 
-bool param_vals::load_json_str(string &s){
-
+param_vals load_json_str(const string &s){
+  param_vals p;
   istringstream ifs;
   ifs.str(s);
-  return(load_json(ifs));
+  p.load_json(ifs);
+  return p;
 }
 		
 
@@ -214,10 +213,12 @@ bool get_params(param_vals &conf, int argc, char * argv[]){
     if(!ifs){
       cerr << "Cannot open json file at " << conf.json_path <<endl;
       cerr << "Aborting run" << endl;
+      ifs.close();
       return true;
     }
     else{
       bool failure = conf.load_json(ifs);
+      ifs.close();
       return failure;
     }
 

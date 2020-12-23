@@ -1,6 +1,7 @@
 from adaptive_io import generate_config as gc
 from collections import defaultdict
 from adaptive_io import make_plot as mp
+import pyket as pk
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -17,6 +18,10 @@ if __name__=='__main__':
                      }
                     },
         "time_params":{"dt":.01,"tf":70},
+
+        "initial_state":
+        [{"re":1,"im":0,"spin":True,"idx":0,"n":0},
+         {"re":0,"im":0,"spin":False,"idx":0,"n":1}],
         
         "energy_info":{
             "params":{
@@ -31,25 +36,21 @@ if __name__=='__main__':
         }
     }
 
-    initial_state ={
-        "initial_state":
-        [{"re":1,"im":0,"spin":True,"idx":0,"n":0},
-         {"re":0,"im":0,"spin":False,"idx":0,"n":1}],
-    }
+
+        
+
     
     if not os.path.exists(params["run_info"]["system_paths"]["code_output_dir"]):
         os.makedirs(params["run_info"]["system_paths"]["code_output_dir"])
     if not os.path.exists(params["run_info"]["system_paths"]["code_output_dir"]+"figs/"):
         os.makedirs(params["run_info"]["system_paths"]["code_output_dir"]+"figs/")
         
-    arg_list,conf,json_path = gc.generate_json(params)
+    conf,json_path,json_str = gc.generate_json(params)
 
    
+    hamiltonian = pk.H(json_str)
     
-    
-    print(subprocess.run(arg_list,check=True))
-
-    print(json_path)
-    mp.plot_run(json_path)     
+    #print(json_path)
+    #mp.plot_run(json_path)     
         
         

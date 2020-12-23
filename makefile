@@ -9,9 +9,9 @@ pyket_flags += ${dflags} ${flags}  -shared -I extern/pybind11/include `python-co
 pyket_name = pyket`python3-config --extension-suffix`
 
 pyket: ${pyket_objects}
-	g++ ${pyket_flags} -o ${pyket_name} ${pyket_objects} -lboost_program_options
+	g++ ${pyket_flags} -o job_manager/${pyket_name} ${pyket_objects} -lboost_program_options
 pyket.o: pyket/pyket.cpp hamiltonian/hamiltonian.hpp configuration.hpp
-	g++ ${pyket_flags} -c pyket.cpp
+	g++ ${pyket_flags} -c pyket/pyket.cpp
 
 
 adaptive_spin: ${objects}
@@ -45,4 +45,6 @@ output.o:configuration.hpp hamiltonian/hamiltonian.hpp hamiltonian/output.cpp
 	g++ ${dflags} ${flags} -c hamiltonian/output.cpp
 
 clean:
-	rm -f *.o adaptive_spin
+	rm -f *.o adaptive_spin job_manager/${pyket_name}
+
+

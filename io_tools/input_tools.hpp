@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <istream>
 #include <algorithm>
 #include <utility>
 #include <iomanip>
@@ -36,8 +37,7 @@ struct simple_ket{
 struct param_vals{
 
   //rapid json
-  bool load_json(std::ifstream &ifs);
-  bool load_json_str(std::string &s);
+  bool load_json(std::istream &is);
   
   //first save, then append output to file 
   void save(std::ofstream &o);
@@ -72,7 +72,7 @@ struct param_vals{
   std::vector<simple_ket> initial_state;
   
 };
-
+param_vals load_json_str(const std::string &s);
 
 
 bool get_params(param_vals &params,int argc, char * argv[]);
