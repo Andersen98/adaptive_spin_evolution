@@ -97,11 +97,14 @@ public:
     array<int,NUM_MODES> mode_cap_exceeded;
   //core.cpp
   void run_step(double dt);
-
+  void set_epsilon(double e);
   
   //setup.cpp
   hamiltonian(const param_vals &params_);
   hamiltonian(const std::string &json_arg);
+  
+
+  
   
   //output.cpp
   pair<double,double> get_emitter_cavity_prob()const;

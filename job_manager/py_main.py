@@ -12,7 +12,7 @@ if __name__=='__main__':
     
 
     params = {
-        "run_info":{"run_id":1429,"num_modes":1000,"system_paths":
+        "run_info":{"run_id":1429,"num_modes":pk.num_modes(),"system_paths":
                     {"code_output_dir":"/home/ethan/code/run_output/1429/",
                      "excecutable":"/home/ethan/code/adaptive_spin",
                      }
@@ -27,7 +27,7 @@ if __name__=='__main__':
             "params":{
             "cutoff":.0004054,
                 "w0":3,
-                "g0":.2,
+                "g0":2,
                 "v0":3,
                 "energy_spectral_density":.01,
                 
@@ -47,8 +47,41 @@ if __name__=='__main__':
         
     conf,json_path,json_str = gc.generate_json(params)
 
-   
-    hamiltonian = pk.H(json_str)
+    def my_spin_pop(state_vec):
+        up = 0
+        down = 0
+        for k in state_vec:
+            if(k.get_spin()):
+                up += abs(k.get_amp())**2
+            else:
+                down += abs(k.get_amp())**2
+
+        return up,down
+    def zero_hist(hist,n):
+       
+        for i in range( n-1):
+            if(hist[-(1+i)] != hist[-(2+i)]):
+                return False
+        return True
+    
+    dt = .01
+    h = pk.H(json_str)
+    n_thresh = 4
+    n_hist =[]
+    n_hist.append(len(h.get_state_vector()))
+    
+    epsilon = .0004054
+    for i in range(1000):
+        up, down = h.get_spin_pop()
+        print("C++     "+str(dt*i) + "  " + str(up) + "  " +str(down))
+        h.run_step(dt)
+        n_hist.append(len(h.get_state_vector()))
+
+        if len(n_hist)> n_thresh and  zero_hist(n_hist,n_thresh):
+            epsilon = epsilon*.01
+            h.set_epsilon(epsilon)
+            print("setting epsilon to " + str(epsilon))
+            print("current state size is " + str(n_hist[-1]))
     
     #print(json_path)
     #mp.plot_run(json_path)     

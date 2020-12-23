@@ -9,7 +9,11 @@ hamiltonian::ket_pair::ket_pair(const state_ket &k){
   lowered.amp = 0;
 }
 
+void hamiltonian::set_epsilon(double e){
 
+  params.energy_cutoff = e;
+
+}
 void hamiltonian::run_step(double dt){
   mode_cap_exceeded.fill(-1);
   psi_delta.resize(0);
@@ -18,7 +22,7 @@ void hamiltonian::run_step(double dt){
     //TODO: Maybe add a threshold for number of runs where the
     //configuration has not grown. 
     bool stop = false;
-    for(int i = 0; i < psi_amp.size(); i++){
+    for(int i = 0; i < int( psi_amp.size()); i++){
       stop = grow_configuration_space(i);
       if(stop){
 	break;

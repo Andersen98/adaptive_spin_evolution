@@ -81,6 +81,7 @@ def generate_json(params,print_command=True,dump_template=False):
         #=================================================================#
         #                      Make Energies                               #
 
+
         energies = {"emitter":{"up":w0/2,"down":-w0/2},
                     "modes":[dict() for x in range(num_modes)]}
         

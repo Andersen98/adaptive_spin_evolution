@@ -1,6 +1,6 @@
 objects = main.o input_tools.o output_tools.o
 flags = -fPIC -std=c++20 -ggdb3 -O0 -Wall 
-dflags = -DNUM_MODES=1000 -DNUM_BITS=8
+dflags = -DNUM_MODES=2 -DNUM_BITS=8
 hamiltonian_objects = grow_configuration_space.o evolve_space.o append_connections.o merge_states.o setup.o core.o output.o
 objects += ${hamiltonian_objects}
 #-Wl,-t

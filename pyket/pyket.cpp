@@ -20,8 +20,8 @@ PYBIND11_MAKE_OPAQUE(state_vector);
 PYBIND11_MAKE_OPAQUE(hamiltonian);
 PYBIND11_MODULE(pyket,m){
   m.doc() = "adaptive spin evolution ported to python";
-  m.def("num_modes",[](){return NUM_MODES;},"Number of allowed modes in a state");
-  m.def("num_bits", [](){return NUM_BITS;},"Number of bits that can store a level");
+  m.def("num_modes",[](){return int( NUM_MODES);},"Number of allowed modes in a state");
+  m.def("num_bits", [](){return int(NUM_BITS);},"Number of bits that can store a level");
   py::class_<state_vector>(m,"StateVector")
     .def(py::init<>())
     .def("__iter__",[](state_vector &v){
@@ -48,10 +48,12 @@ PYBIND11_MODULE(pyket,m){
       return std::unique_ptr<hamiltonian>(new hamiltonian(json_arg));
     }))
     .def("run_step",&hamiltonian::run_step)
-    .def("get_state_vector", &hamiltonian::state_vector)
+    .def("get_state_vector", &hamiltonian::get_state_vector)
     .def("get_spin_pop",&hamiltonian::get_spin_pop)
-    .def("get_emitter_cavity_prob",&hamiltonian::get_emmiter_cavity_prob)
-    .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop);
-  
+    .def("get_emitter_cavity_prob",&hamiltonian::get_emitter_cavity_prob)
+    .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop)
+    .def("reset_state",&hamiltonian::reset_state)
+    .def("run_evolve",&hamiltonian::run_evolve)
+    .def("set_epsilon",&hamiltonian::set_epsilon);
   
 }

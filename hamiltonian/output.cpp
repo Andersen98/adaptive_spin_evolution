@@ -67,7 +67,6 @@ array<tuple<int,double,double>,NUM_MODES> hamiltonian::get_modeLbl_quanta_pop()c
     for_each(result.begin(),result.end(),[&](auto &el){
       for(auto &ket:psi_lbl){
 	double probability =norm(ket.amp);
-	int number_expectation =0;
 	int modeLbl = std::get<0>(el);
 	int nVal = ket.get_mode(modeLbl);
 	std::get<1>(el) += nVal*probability;

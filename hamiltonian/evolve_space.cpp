@@ -7,7 +7,7 @@ void hamiltonian::evolve_space(double dt){
 
 
     vector<int> con2amp(psi_amp.size());
-    for(int i = 0; i < psi_amp.size(); i++){
+    for(int i = 0; i <int( psi_amp.size()); i++){
       //con -> ampidx
       con2amp[psi_amp[i].idx] = i;
     }
