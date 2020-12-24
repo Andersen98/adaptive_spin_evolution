@@ -29,6 +29,11 @@ d = {
 p.load_dict(d)
 print(p.initial_state)
 h = pyket.H(p)
-h.par_test_two()    
 
+
+
+import cProfile
+import re
+cProfile.run('h.par_test_one()')
+cProfile.run('h.par_test_two()')
 

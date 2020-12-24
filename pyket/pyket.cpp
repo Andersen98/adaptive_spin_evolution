@@ -59,16 +59,15 @@ PYBIND11_MODULE(pyket,m){
     }))
     .def("run_grow_evolve",&hamiltonian::run_grow_evolve)
     .def("run_grow",&hamiltonian::run_grow)
-    .def("run_grow",&hamiltonian::run_evolve)
+    .def("run_evolve",&hamiltonian::run_evolve)
     .def("get_state_vector", &hamiltonian::get_state_vector)
     .def("get_spin_pop",&hamiltonian::get_spin_pop)
     .def("get_emitter_cavity_prob",&hamiltonian::get_emitter_cavity_prob)
     .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop)
     .def("set_zero_except_init",&hamiltonian::set_zero_except_init)
-    .def("run_evolve",&hamiltonian::run_evolve)
     .def("set_epsilon",&hamiltonian::set_epsilon)
-    .def("par_test_one",&hamiltonian::par_test_one)
-    .def("par_test_two",&hamiltonian::par_test_two);
+    .def("par_test_one",&hamiltonian::par_test_one, py::call_guard<py::gil_scoped_release>())
+    .def("par_test_two",&hamiltonian::par_test_two, py::call_guard<py::gil_scoped_release>());
   
   py::class_<std::vector<int>>(m, "IntVector")
     .def(py::init<>())

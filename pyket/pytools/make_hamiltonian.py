@@ -65,6 +65,7 @@ def make_hamiltonian(params,dump_template=False):
         print(json.dumps(example_dict,indent=4))
     else:
         params = pyket.Params()
+        params.run_id = 
         #Run Info
         num_modes = params["run_info"]["num_modes"]
 
@@ -73,7 +74,7 @@ def make_hamiltonian(params,dump_template=False):
         v0 = params["energy_info"]["params"]["v0"]
         g0 = params["energy_info"]["params"]["g0"]
         energy_spectral_density = params["energy_info"]["params"]["energy_spectral_density"]
-
+        
 
         #time params
         dt = params["time_params"]["dt"]
