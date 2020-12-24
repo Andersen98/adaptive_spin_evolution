@@ -1,5 +1,5 @@
 #include "hamiltonian.hpp"
-
+void par_test_two(){}
 void hamiltonian::set_epsilon(double e){
 
   params.energy_cutoff = e;

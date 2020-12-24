@@ -1,11 +1,10 @@
-from adaptive_io import generate_config as gc
 from collections import defaultdict
-from adaptive_io import make_plot as mp
+import pytools 
 import pyket as pk
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import subprocess
+
 import os
 if __name__=='__main__':
 
@@ -45,7 +44,7 @@ if __name__=='__main__':
     if not os.path.exists(params["run_info"]["system_paths"]["code_output_dir"]+"figs/"):
         os.makedirs(params["run_info"]["system_paths"]["code_output_dir"]+"figs/")
         
-    conf,json_path,json_str = gc.generate_json(params)
+    pytools.make_hamiltonian(params)
 
     def my_spin_pop(state_vec):
         up = 0

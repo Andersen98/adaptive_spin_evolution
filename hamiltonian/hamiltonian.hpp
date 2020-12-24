@@ -108,7 +108,11 @@ public:
   void run_evolve(double dt);
   void set_epsilon(double e);
   void set_zero_except_init();
-  
+
+
+  //par_runtime.cpp
+  void par_test_one();
+  void par_test_two();
   
   //output.cpp
   pair<double,double> get_emitter_cavity_prob()const;

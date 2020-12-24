@@ -1,54 +1,11 @@
 #include "input_tools.hpp"
 #include <sstream>
 #include <istream>
-namespace pt = boost::property_tree;
 namespace rj = rapidjson;
 using boost::format;
 using namespace std;
 using boost::io::group;
 
-void param_vals::save(std::ofstream &o){
-  //empty property tree
-  pt::ptree tree;
-
-  tree.put("run_info.run_id",run_id);
-  tree.put("run_info.output_directory",output_directory);
-
-
-  //put the simple values into the tree
-  tree.put("energy_cutoff",energy_cutoff);
-  tree.put("t0",t0);
-  tree.put("tf",tf);
-  tree.put("bits_per_mode",NUM_BITS );
-  tree.put("dt", dt);
-
-  vector<double>::iterator result;
-  result = std::max_element(mode_couplings.begin(),mode_couplings.end());
-  int max_idx = std::distance(mode_couplings.begin(),result);
-
-  tree.put("cavity_mode.energy",mode_energies[max_idx]);
-  tree.put("cavity_mode.couplings",mode_couplings[max_idx]);
-    
-  
-  pt::ptree mode_values;
-  for(uint i = 0; i < mode_energies.size(); i++){
-    pt::ptree child;
-    child.put("energy",mode_energies[i]);
-    child.put("coupling",mode_couplings[i]);
-
-    mode_values.push_back(std::make_pair("",child));
-  }
-  pt::ptree mode_info;
-  mode_info.put("total_count",mode_energies.size());
-  mode_info.put("strongly_coupled", 1);
-  mode_info.put("weakly_coupled", mode_energies.size()-1);
-  mode_info.put("spectral_density", "random_uniform");
-  mode_info.put("energy_spectral_density", energy_spectral_density);
-  tree.add_child("modes.mode_info",mode_info);
-  tree.add_child("modes.mode_values",mode_values);
- 
-  pt::write_json(o,tree);
-}
 
 
 

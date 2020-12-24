@@ -1,16 +1,17 @@
 objects = main.o input_tools.o output_tools.o program_option_tools.o
-flags = -fPIC -std=c++20 -ggdb3 -O0 -Wall 
+flags = -fPIC -std=c++20 -ggdb3 -O0 -Wall --shared 
 dflags = -DNUM_MODES=2 -DNUM_BITS=8
+dflags_compute = -DBOOST_COMPUTE_DEBUG_KERNEL_COMPILATION -DBOOST_COMPUTE_HAVE_THREAD_LOCAL -DCL_TARGET_OPENCL_VERSION=110 
 hamiltonian_objects = grow_configuration_space.o evolve_space.o append_connections.o \
-merge_states.o setup.o core.o output.o runtime.o 
+merge_states.o setup.o core.o output.o runtime.o par_runtime.o
 objects += ${hamiltonian_objects}
 #-Wl,-t
 pyket_objects += ${hamiltonian_objects} pyket.o input_tools.o
-pyket_flags += ${dflags} ${flags}  -shared -I extern/pybind11/include `python-config --includes`
+pyket_flags += ${dflags} ${flags}  -I extern/pybind11/include `python-config --includes`
 pyket_name = pyket`python3-config --extension-suffix`
 
 pyket: ${pyket_objects}
-	g++ ${pyket_flags} -o pyket/${pyket_name} ${pyket_objects}
+	g++ ${pyket_flags} -o pyket/${pyket_name} ${pyket_objects} -lOpenCL
 pyket.o: pyket/pyket.cpp hamiltonian/hamiltonian.hpp configuration.hpp
 	g++ ${pyket_flags} -c pyket/pyket.cpp
 
@@ -51,6 +52,9 @@ output.o:configuration.hpp hamiltonian/hamiltonian.hpp hamiltonian/output.cpp
 program_options_tools.o: io_tools/input_tools.hpp io_tools/ program_option_tools.hpp \
 io_tools/program_options_tools.cpp 
 	g++ ${dflags} ${flags} -c io_tools/program_option_tools.cpp
+
+par_runtime.o: hamiltonian/hamiltonian.hpp hamiltonian/par_runtime.cpp
+	g++  ${dflags} ${dflags_compute} ${flags} -c hamiltonian/par_runtime.cpp 
 
 clean:
 	rm -f *.o adaptive_spin pyket/${pyket_name}

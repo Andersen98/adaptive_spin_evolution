@@ -17,8 +17,6 @@
 
 
 #include <boost/format.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 
 #include <rapidjson/document.h>
@@ -39,10 +37,6 @@ struct param_vals{
   //rapid json
   bool load_json(std::istream &is);
   
-  //first save, then append output to file 
-  void save(std::ofstream &o);
-  //  void wrie_populations(ofstream &o);
-
   
   //run info
   int run_id;
@@ -75,13 +69,7 @@ struct param_vals{
 param_vals load_json_str(const std::string &s);
 
 
-bool get_params(param_vals &params,int argc, char * argv[]);
 
-struct Spin_Params{
-
-  double energy;
-  
-};
 
 
 

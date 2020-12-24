@@ -42,7 +42,7 @@ inline int bit_count (long x)
 
 
 
-using namespace std;
+
 template<const int num_modes,const int num_bits>
 class partial_config{
   template<int umode,int ubits>
@@ -51,7 +51,7 @@ class partial_config{
   //friend std::ostream  &operator<<(std::ostream &os, const partial_config &c); 
 
   std::array<long unsigned, (num_modes*num_bits/64) +1> rep; //represented in long ints
-  static vector<long unsigned> mode_masks;
+  static std::vector<long unsigned> mode_masks;
   static const long unsigned one = 1;
   static const long unsigned zero = 0;
   
@@ -92,7 +92,7 @@ public:
   }
 
   void operator=(const partial_config &c) {
-    copy(begin(c.rep),end(c.rep),begin(rep));
+    std::copy(begin(c.rep),end(c.rep),begin(rep));
     
   }
 
@@ -160,16 +160,16 @@ public:
 
   void print_n_words(int n_giant_words=giant_count) const{
     for(int i = 0; i <n_giant_words;  i++){
-      std::cout <<"block: " << i << " " << bitset<64>(rep[i]) << endl;
+      std::cout <<"block: " << i << " " << bitset<64>(rep[i]) << std::endl;
     }
   }
 
   void print_members()const{
-    std::cout << "num_bits: " << num_bits<<endl;
-    std::cout << "num_modes: " << num_modes << endl;
-    std::cout << "mask size: " << mode_masks.size() << endl;
+    std::cout << "num_bits: " << num_bits<<std::endl;
+    std::cout << "num_modes: " << num_modes << std::endl;
+    std::cout << "mask size: " << mode_masks.size() << std::endl;
     for(int i = 0; i < mode_masks.size(); i++){
-      cout << "mode " << i << ": " << std::bitset<64>(mode_masks[i]) << endl;
+      std::cout << "mode " << i << ": " << std::bitset<64>(mode_masks[i]) << std::endl;
     }
   }
 
@@ -182,7 +182,7 @@ public:
       int level = get_mode(i);
       if(level > 0){
 	num_active_modes++;
-	mode_level_array[num_active_modes-1] = make_pair(i,level) ;
+	mode_level_array[num_active_modes-1] = std::make_pair(i,level) ;
       }
     }
     int rem =  num_active_modes%modes_per_line;
@@ -238,10 +238,10 @@ const int num_bits = 4;
 const int giant_words = (num_modes*num_bits)/64 + 1;
 */
 template<int bits>
-vector<long unsigned> get_mask(){
+std::vector<long unsigned> get_mask(){
   int _num_bits = bits;
   unsigned long mode_tail = 1;
-  vector<long unsigned> mask(64/_num_bits);
+  std::vector<long unsigned> mask(64/_num_bits);
   for(int i = 0; i < (_num_bits-1); i++){
     mode_tail |= mode_tail<<1;
   }
@@ -251,7 +251,7 @@ vector<long unsigned> get_mask(){
   return mask;
 }
 template< int modes,int bits>
-vector<long unsigned> partial_config<modes,bits>::mode_masks = get_mask<bits>();//variable resolution VERY strange
+std::vector<long unsigned> partial_config<modes,bits>::mode_masks = get_mask<bits>();//variable resolution VERY strange
 
 template <int modes,int bits>
 std::ostream& operator<<( std::ostream& o, const partial_config<modes, bits>& p ) {
