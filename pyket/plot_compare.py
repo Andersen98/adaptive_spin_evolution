@@ -49,11 +49,11 @@ pinit_state = pyket.StateVector()
 
 ket = pyket.StateKet()
 ket.set_spin(True)
-ket.set_amp(complex('1'))
+ket.set_amp(complex(.5,0))
 pinit_state.push_back(ket)
 ket = pyket.StateKet()
 ket.set_mode(0,1)
-ket.set_amp(complex(0))
+ket.set_amp(complex(.5,0))
 pinit_state.push_back(ket)
 ket = pyket.StateKet()
 
@@ -66,21 +66,39 @@ d = {
     "mode_couplings":[g0,g1],
     "up_energy":.5*w0,
     "down_energy":-.5*w0,
-    "energy_cutoff":0,
+    "energy_cutoff":.00001,
     "dt":.01
     
 }
-
+N1 =100
+N2 = 10000
+N = N1+N2
 p = pyket.Params()
 p.load_dict(d)
 h = pyket.H(p)
-print(pinit_state)
-print(qinit_state)
-for i in range(min(fock_N1,fock_N2)-1):
-    print('--------------ITERATION ' +str(i) + '--------------------')    
+dt = 0.001
+up_list = np.empty(N)
+num_states = np.empty(N)
+t = np.empty(N)
+print(h.get_state())
+print(h.get_matrix())
+for i in range(N1):
     h.run_grow()
-    h.run_step(complex(1,0))
-    qinit_state = qinit_state +complex(1,0)*H*qinit_state 
-    print(h.get_state())
-    print(qinit_state.unit())
-
+    h.run_step(complex(0,- dt))
+    up,down = h.get_spin_pop()
+    num_states[i] = h.get_size()
+    t[i] = dt*i
+    up_list[i] = up
+h.set_zero_except_init()
+for i in range(N1,N):
+    h.run_step(complex(0,-dt))
+    up,down= h.get_spin_pop()
+    num_states[i] = h.get_size()
+    up_list[i] = up
+    t[i] = i*dt
+    
+fig, ax = plt.subplots(2,1,figsize=(9,4))  # Create a figure containing a single axes.
+ax[0].plot(t,up_list)
+ax[1].plot(t,num_states)
+plt.show()
+print(up_list)

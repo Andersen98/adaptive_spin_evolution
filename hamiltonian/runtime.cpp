@@ -73,7 +73,7 @@ void hamiltonian::run_evolve(double dt){
 }
 
 void hamiltonian::set_zero_except_init(){
-
+  using namespace std;
   int init_size = params.initial_state.size();
 
   double init_norm = 0;
@@ -86,11 +86,20 @@ void hamiltonian::set_zero_except_init(){
 
     if(k.idx < init_size){
       //this part of initial state
-      k.amp =(1.0/init_norm) *params.initial_state[k.idx].amp;
+      for(auto &ik:params.initial_state){
+	if(k == ik){
+	  k.amp =(1.0/init_norm) *ik.amp;
+	}
+      }
     }else{
       k.amp = 0;
     }
   }
+
+  copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+  sort(psi_amp.begin(),psi_amp.end(),[](const auto &it1,const auto &it2){
+    return norm(it1.amp)>norm(it2.amp);
+  });
     
 }
 

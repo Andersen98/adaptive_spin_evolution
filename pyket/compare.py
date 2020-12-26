@@ -75,11 +75,12 @@ p.load_dict(d)
 h = pyket.H(p)
 print(pinit_state)
 print(qinit_state)
+dt = .1
 for i in range(min(fock_N1,fock_N2)-1):
     print('--------------ITERATION ' +str(i) + '--------------------')    
     h.run_grow()
-    h.run_step(complex(1,0))
-    qinit_state = qinit_state +complex(1,0)*H*qinit_state 
+    h.run_step(complex(0,-dt))
+    qinit_state = qinit_state +complex(0,-dt)*H*qinit_state 
     print(h.get_state())
     print(qinit_state.unit())
 

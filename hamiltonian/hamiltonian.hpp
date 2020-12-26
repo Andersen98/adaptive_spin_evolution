@@ -108,8 +108,8 @@ class hamiltonian{
   void update_matrix_diag_only_mode(uint update_idx,int mode, int level);
   void grow_matrix(uint new_size);
 public:
-    array<int,NUM_MODES> mode_cap_exceeded;
-  
+  array<int,NUM_MODES> mode_cap_exceeded;
+
   
   //setup.cpp
   hamiltonian(const param_vals &params_);
@@ -134,6 +134,7 @@ public:
   //output.cpp
   pair<double,double> get_emitter_cavity_prob()const;
   state_vector get_state()const;
+  matrix_type &get_matrix();
   int get_psi_size()const;
   pair<double,double> get_spin_pop()const;
   array<tuple<int,double,double>,NUM_MODES> get_modeLbl_quanta_pop()const;

@@ -6,6 +6,7 @@
 #include "../io_tools/input_tools.hpp"
 #include <vector>
 #include <string>
+#include <sstream>
 #include <complex>
 #include <memory>
 #include <algorithm>
@@ -82,12 +83,28 @@ PYBIND11_MODULE(pyket,m){
     .def("run_step", &hamiltonian::run_step)
     .def("run_grow",&hamiltonian::run_grow)
     .def("get_state", &hamiltonian::get_state)
+    .def("get_size", &hamiltonian::get_psi_size)
     .def("get_spin_pop",&hamiltonian::get_spin_pop)
     .def("get_emitter_cavity_prob",&hamiltonian::get_emitter_cavity_prob)
     .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop)
     .def("set_zero_except_init",&hamiltonian::set_zero_except_init)
     .def("set_epsilon",&hamiltonian::set_epsilon)
-    .def("run_ode_evolve",&hamiltonian::odeint_evolve);
+    .def("run_ode_evolve",&hamiltonian::odeint_evolve)
+    .def("get_matrix",[](hamiltonian &h){
+      // Redirect cout.
+      streambuf* oldCoutStreamBuf = cout.rdbuf();
+      ostringstream strCout;
+      cout.rdbuf( strCout.rdbuf() );
+
+      // This goes to the string stream.
+      cout << h.get_matrix() ;
+
+      // Restore old cout.
+      cout.rdbuf( oldCoutStreamBuf );
+      
+      
+      return strCout.str();
+    });
   
   py::class_<std::vector<int>>(m, "IntVector")
     .def(py::init<>())
