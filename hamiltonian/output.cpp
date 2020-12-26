@@ -3,9 +3,10 @@
 
 using namespace std;
 
-const hamiltonian::state_vector &hamiltonian::get_state_vector()const{
-    return psi_lbl;
-  }
+hamiltonian::state_vector hamiltonian::get_state()const{
+
+  return state_vector(psi_lbl);
+}
 int hamiltonian::get_psi_size()const{
     return psi_lbl.size();
   }

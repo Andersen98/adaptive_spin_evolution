@@ -160,7 +160,7 @@ public:
 
   void print_n_words(int n_giant_words=giant_count) const{
     for(int i = 0; i <n_giant_words;  i++){
-      std::cout <<"block: " << i << " " << bitset<64>(rep[i]) << std::endl;
+      std::cout <<"block: " << i << " " << std::bitset<64>(rep[i]) << std::endl;
     }
   }
 
@@ -191,40 +191,40 @@ public:
     
     boost::format fmtr(format_str.c_str());
     
-    if(div){
-      for(int i = 0; i < div; i++){      
-	fmtr % mode_level_array[i*modes_per_line +0].first;
-	fmtr % mode_level_array[i*modes_per_line +0].second;
-	fmtr % mode_level_array[i*modes_per_line +1].first;
-	fmtr % mode_level_array[i*modes_per_line +1].second;
-	fmtr % mode_level_array[i*modes_per_line +2].first;
-	fmtr % mode_level_array[i*modes_per_line +2].second;
-	fmtr % mode_level_array[i*modes_per_line +3].first;
-	fmtr % mode_level_array[i*modes_per_line +3].second;
-	fmtr % mode_level_array[i*modes_per_line +4].first;
-	fmtr % mode_level_array[i*modes_per_line +4].second;
-	fmtr % mode_level_array[i*modes_per_line +5].first;
-	fmtr % mode_level_array[i*modes_per_line +5].second;
-	fmtr % mode_level_array[i*modes_per_line +6].first;
-	fmtr % mode_level_array[i*modes_per_line +6].second;
-	fmtr % mode_level_array[i*modes_per_line +7].first;
-	fmtr % mode_level_array[i*modes_per_line +7].second;
-	fmtr % mode_level_array[i*modes_per_line +8].first;
-	fmtr % mode_level_array[i*modes_per_line +8].second;
-	fmtr % mode_level_array[i*modes_per_line +9].first;
-	fmtr % mode_level_array[i*modes_per_line +9].second;
-	result += fmtr.str();
-      }
-      
-      
-    }else if(rem){
-      boost::format fmtr_single("%|1$-d|:%|2$-d|");
-      for(int i = modes_per_line*div; i < rem; i++){
-	fmtr_single % mode_level_array[i].first % mode_level_array[i].second;
-	result += fmtr_single.str();
-	result += "  ";
-      }
+    
+    for(int i = 0; i < div; i++){      
+      fmtr % mode_level_array[i*modes_per_line +0].first;
+      fmtr % mode_level_array[i*modes_per_line +0].second;
+      fmtr % mode_level_array[i*modes_per_line +1].first;
+      fmtr % mode_level_array[i*modes_per_line +1].second;
+      fmtr % mode_level_array[i*modes_per_line +2].first;
+      fmtr % mode_level_array[i*modes_per_line +2].second;
+      fmtr % mode_level_array[i*modes_per_line +3].first;
+      fmtr % mode_level_array[i*modes_per_line +3].second;
+      fmtr % mode_level_array[i*modes_per_line +4].first;
+      fmtr % mode_level_array[i*modes_per_line +4].second;
+      fmtr % mode_level_array[i*modes_per_line +5].first;
+      fmtr % mode_level_array[i*modes_per_line +5].second;
+      fmtr % mode_level_array[i*modes_per_line +6].first;
+      fmtr % mode_level_array[i*modes_per_line +6].second;
+      fmtr % mode_level_array[i*modes_per_line +7].first;
+      fmtr % mode_level_array[i*modes_per_line +7].second;
+      fmtr % mode_level_array[i*modes_per_line +8].first;
+      fmtr % mode_level_array[i*modes_per_line +8].second;
+      fmtr % mode_level_array[i*modes_per_line +9].first;
+      fmtr % mode_level_array[i*modes_per_line +9].second;
+      result += fmtr.str();
     }
+      
+      
+    
+    boost::format fmtr_single("%|1$-d|:%|2$-d|");
+    for(int i = modes_per_line*div; i < rem; i++){
+      fmtr_single % mode_level_array[i].first % mode_level_array[i].second;
+      result += fmtr_single.str();
+      result += "  ";
+    }
+  
     
     return result;
   
@@ -351,8 +351,8 @@ public:
 
   std::string str()const{
     std::string result = "";
-    boost::format fmtr("Amp:(%|1$-e|,%|2$-e|)  Spin:%|3$-b|\n");
-    fmtr % std::real(amp)%std::imag(amp)% spin;
+    boost::format fmtr("Idx:%|4$-d|  Amp:(%|1$-f|,%|2$-f|)  Spin:%|3$-b| ");
+    fmtr % std::real(amp)%std::imag(amp)% spin%idx;
     result = fmtr.str();
     result += lbl.str();
     return(result);

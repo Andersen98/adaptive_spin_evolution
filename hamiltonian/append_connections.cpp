@@ -20,13 +20,18 @@ int hamiltonian::binary_search_state(const state_ket &k,const state_vector &psi_
 //to non empy elements. then 'color' k with an idx
 void hamiltonian::append_connections(state_vector &psi_mixed ){
 
-  
+
+  if(psi_mixed.size() > connection_matrix.size1()){
+    grow_matrix(2*psi_mixed.size());
+    
+  }
+
   for(auto &ket : psi_mixed){
     
     if(ket.idx == state_ket::empty_idx){
-     
-    
-    
+      
+      uint update_idx = state_connections.size();
+      update_matrix_diag_only_spin(update_idx, ket.spin);
       vector<dir_edge_mode> edges;   
       //apply hamiltonian
       for(int i = 0; i < NUM_MODES; i++){
@@ -34,7 +39,8 @@ void hamiltonian::append_connections(state_vector &psi_mixed ){
 	ket_pair kp = get_connected_states(ket,i);
 	bool raised = kp.raised.idx==state_ket::empty_idx;
 	bool lowered = kp.lowered.idx==state_ket::empty_idx;
-
+	uint level = ket.get_mode(i);
+	update_matrix_diag_only_mode(update_idx,i,level);
 	if(raised){
 	  //look for an instance
 	  int vec_idx = binary_search_state(kp.raised,psi_mixed);
@@ -44,6 +50,8 @@ void hamiltonian::append_connections(state_vector &psi_mixed ){
 	    em.connection_mode = i;
 	    em.raised = true;
 	    edges.push_back(em);
+	    connection_matrix(update_idx,em.out_idx) =
+	      g[level+1][i];
 	  }
 	}
 	if(lowered){
@@ -53,7 +61,9 @@ void hamiltonian::append_connections(state_vector &psi_mixed ){
 	    em.out_idx = psi_mixed[vec_idx].idx;
 	    em.connection_mode = i;
 	    em.raised = false;
-	    edges.push_back(em); 
+	    edges.push_back(em);
+	    connection_matrix(update_idx,em.out_idx) =
+	      g[level][i];
 	  }
 	}
 
@@ -68,4 +78,3 @@ void hamiltonian::append_connections(state_vector &psi_mixed ){
     }//end if empty_idx
   }//end k loop
 }
-     

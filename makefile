@@ -1,9 +1,12 @@
 objects = main.o input_tools.o output_tools.o program_option_tools.o
-flags = -fPIC -std=c++20 -ggdb3 -O0 -Wall --shared 
+flags = -fPIC -std=c++17 -ggdb3 -O0 -Wall --shared 
 dflags = -DNUM_MODES=2 -DNUM_BITS=8
-dflags_compute = -DBOOST_COMPUTE_DEBUG_KERNEL_COMPILATION -DBOOST_COMPUTE_HAVE_THREAD_LOCAL -DCL_TARGET_OPENCL_VERSION=110 
+dflags_compute = -DBOOST_COMPUTE_DEBUG_KERNEL_COMPILATION -DBOOST_COMPUTE_HAVE_THREAD_LOCAL -DCL_TARGET_
+flags_vexcl = 
+dflags_vexcl = 
+OPENCL_VERSION=110 
 hamiltonian_objects = grow_configuration_space.o evolve_space.o append_connections.o \
-merge_states.o setup.o core.o output.o runtime.o par_runtime.o
+merge_states.o setup.o core.o output.o runtime.o par_runtime.o odeint_evolve.o
 objects += ${hamiltonian_objects}
 #-Wl,-t
 pyket_objects += ${hamiltonian_objects} pyket.o input_tools.o
@@ -11,7 +14,7 @@ pyket_flags += ${dflags} ${flags}  -I extern/pybind11/include `python-config --i
 pyket_name = pyket`python3-config --extension-suffix`
 
 pyket: ${pyket_objects}
-	g++ ${pyket_flags} -o pyket/${pyket_name} ${pyket_objects} -lOpenCL
+	g++ ${pyket_flags} -o pyket/${pyket_name} ${pyket_objects}
 pyket.o: pyket/pyket.cpp hamiltonian/hamiltonian.hpp configuration.hpp
 	g++ ${pyket_flags} -c pyket/pyket.cpp
 
@@ -20,7 +23,7 @@ adaptive_spin: ${objects}
 
 main.o: configuration.hpp io_tools/input_tools.hpp io_tools/output_tools.hpp main.cpp hamiltonian/hamiltonian.hpp 
 	g++ ${dflags} ${flags} -c main.cpp
-input_tools.o: io_tools/input_tools.hpp io_tools/input_tools.cpp
+input_tools.o: io_tools/input_tools.hpp io_tools/input_tools.cpp configuration.hpp
 	g++ ${dflags} ${flags} -c io_tools/input_tools.cpp
 output_tools.o:configuration.hpp io_tools/output_tools.hpp io_tools/output_tools.cpp
 	g++ ${dflags} ${flags} -c io_tools/output_tools.cpp
@@ -54,8 +57,10 @@ io_tools/program_options_tools.cpp
 	g++ ${dflags} ${flags} -c io_tools/program_option_tools.cpp
 
 par_runtime.o: hamiltonian/hamiltonian.hpp hamiltonian/par_runtime.cpp
-	g++  ${dflags} ${dflags_compute} ${flags} -c hamiltonian/par_runtime.cpp 
+	g++  ${dflags} ${flags}  -c hamiltonian/par_runtime.cpp 
 
+odeint_evolve.o :hamiltonian/hamiltonian.hpp hamiltonian/odeint_evolve.cpp
+	g++  ${dflags} ${flags}  -c hamiltonian/odeint_evolve.cpp 
 clean:
 	rm -f *.o adaptive_spin pyket/${pyket_name}
 

@@ -1,9 +1,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/complex.h>
-#include "configuration.hpp"
-#include "hamiltonian/hamiltonian.hpp"
-#include "io_tools/input_tools.hpp"
+#include "../configuration.hpp"
+#include "../hamiltonian/hamiltonian.hpp"
+#include "../io_tools/input_tools.hpp"
 #include <vector>
 #include <string>
 #include <complex>
@@ -11,7 +11,7 @@
 #include <algorithm>
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
-PYBIND11_MAKE_OPAQUE(std::vector<simple_ket>);
+
 PYBIND11_MAKE_OPAQUE(State_Ket<NUM_MODES,NUM_BITS>);
 PYBIND11_MAKE_OPAQUE(std::vector<State_Ket<NUM_MODES,NUM_BITS>>);
 PYBIND11_MAKE_OPAQUE(hamiltonian);
@@ -29,6 +29,15 @@ PYBIND11_MODULE(pyket,m){
   m.def("num_modes",[](){return int( NUM_MODES);},"Number of allowed modes in a state");
   m.def("num_bits", [](){return int(NUM_BITS);},"Number of bits that can store a level");
   m.def("load_json_str", &load_json_str);
+  m.def("sort_state_by_lbl",[](state_vector &v)
+	mutable{sort(v.begin(),v.end(),
+		     [](auto &it1,const auto &it2){return it1<it2;});
+  });
+  m.def("sort_state_by_amp",[](state_vector &v)
+	mutable{sort(v.begin(),v.end(),
+		     [](auto &it1,const auto &it2){return norm(it1.amp)>norm(it2.amp);});
+  });
+ 
   py::class_<state_vector>(m,"StateVector")
     .def(py::init<>())
     .def("__iter__",[](state_vector &v){
@@ -36,7 +45,18 @@ PYBIND11_MODULE(pyket,m){
     },py::keep_alive<0,1>())
     .def("__len__",[](const state_vector &v){return v.size();})
     .def("clear", &state_vector::clear)
-    .def("push_back", [](state_vector &v, const state_ket &k)mutable{v.push_back(k);} );
+    .def("push_back", [](state_vector &v, const state_ket &k)mutable{v.push_back(k);} )
+    .def("__repr__",[](state_vector &v){
+      string result = "[\n ";
+      for(const auto &d: v){
+	result = result + "{" + d.str() + "}\n";
+      }
+      result += "]";
+      return(py::str(result));
+    })
+    .def("__getitem__",[](const state_vector &v,uint i)
+    {return v[i];});
+  
   py::class_<state_ket>(m,"StateKet")
     .def(py::init<>())
     .def("get_mode",&state_ket::get_mode)
@@ -48,6 +68,8 @@ PYBIND11_MODULE(pyket,m){
     .def("__repr__",&state_ket::str)
     .def("__eq__",&state_ket::operator==)
     .def("__lt__",&state_ket::operator<)
+    .def("set_amp",[](state_ket &k,int i)mutable{k.idx = i;})
+    .def("get_idx",[](const state_ket &k){return k.idx;})
     .def("get_amp",[](const state_ket &k){return k.amp;})
     .def("set_amp",[](state_ket &k,std::complex<double> a)mutable{k.amp = a;});
   py::class_<hamiltonian>(m,"H")
@@ -57,17 +79,15 @@ PYBIND11_MODULE(pyket,m){
     .def(py::init([](param_vals &p){
       return std::unique_ptr<hamiltonian>(new hamiltonian(p));
     }))
-    .def("run_grow_evolve",&hamiltonian::run_grow_evolve)
+    .def("run_step", &hamiltonian::run_step)
     .def("run_grow",&hamiltonian::run_grow)
-    .def("run_evolve",&hamiltonian::run_evolve)
-    .def("get_state_vector", &hamiltonian::get_state_vector)
+    .def("get_state", &hamiltonian::get_state)
     .def("get_spin_pop",&hamiltonian::get_spin_pop)
     .def("get_emitter_cavity_prob",&hamiltonian::get_emitter_cavity_prob)
     .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop)
     .def("set_zero_except_init",&hamiltonian::set_zero_except_init)
     .def("set_epsilon",&hamiltonian::set_epsilon)
-    .def("par_test_one",&hamiltonian::par_test_one, py::call_guard<py::gil_scoped_release>())
-    .def("par_test_two",&hamiltonian::par_test_two, py::call_guard<py::gil_scoped_release>());
+    .def("run_ode_evolve",&hamiltonian::odeint_evolve);
   
   py::class_<std::vector<int>>(m, "IntVector")
     .def(py::init<>())
@@ -97,42 +117,6 @@ PYBIND11_MODULE(pyket,m){
       return(py::str(result));
     });
   
-
-  py::class_<simple_ket>(m,"SimpleKet")
-    .def(py::init<>())
-    .def_readwrite("n",&simple_ket::n)
-    .def_readwrite("mode",&simple_ket::mode)
-    .def_readwrite("spin",&simple_ket::spin)
-    .def_readwrite("amp",&simple_ket::amp)
-    .def("__repr__",[](simple_ket &d){
-      string result = "";
-      result = "spin(" + to_string(d.spin)+")" + ", mode("+to_string(d.mode)+"):lvl("+
-	  to_string(d.n) + ") ";
-      return py::str(result);
-      
-    });
-    
-  py::class_<std::vector<simple_ket>>(m, "SimpleStateVector")
-    .def(py::init<>())
-    .def("clear", &std::vector<simple_ket>::clear)
-    .def("push_back", [](vector<simple_ket> &v, const simple_ket &k)mutable{v.push_back(k);} )
-    .def("__len__", [](const std::vector<simple_ket> &v) { return v.size(); })
-    .def("__iter__", [](std::vector<simple_ket> &v) {
-      return py::make_iterator(v.begin(), v.end());
-    }, py::keep_alive<0, 1>())
-    .def("__repr__",[](std::vector<simple_ket> &v){
-      string result = "[ ";
-      for(auto d: v){
-	result = result + "{" + to_string(d.spin) + ", mode("+to_string(d.mode)+"):lvl("+
-	  to_string(d.n) + ")}, ";
-      }
-      result.pop_back();
-      result.pop_back();
-      result += " ]";
-      return(py::str(result));
-    });
-  
-
 
   py::class_<param_vals>(m, "Params")
     .def(py::init<>())
@@ -173,7 +157,7 @@ PYBIND11_MODULE(pyket,m){
 	}else if(key.compare(string{"N"})==0){
 	  p.N = item.second.cast<double>();
 	}else if(key.compare(string{"initial_state"})==0){
-	  vector<simple_ket> *v = item.second.cast<vector<simple_ket>*>();
+	  state_vector *v = item.second.cast<state_vector*>();
 	  p.initial_state.resize(v->size());
 	  copy(v->begin(),v->end(),p.initial_state.begin());
 	}else{

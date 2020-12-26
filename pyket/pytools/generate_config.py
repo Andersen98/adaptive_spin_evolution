@@ -51,8 +51,9 @@ def generate_json(params,print_command=True,dump_template=False):
             "time_params":{"dt":.001,"tf":.003},
 
             "initial_state":
-                [{"re":.9,"im":0,"spin":True,"idx":0,"n":1},
-                 {"re":.1,"im":0,"spin":False,"idx":0,"n":1}],
+                [{"re":.9,"im":0,"spin":True,"modes":[ {"idx":0,"n":1}]},
+                  {"re":.1,"im":0,"spin":False,"modes"[{"idx":0,"n":1}]}
+                  ],
 
             "energy_info":{
                 "params":{

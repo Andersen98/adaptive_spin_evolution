@@ -1,10 +1,11 @@
-import pyket
 import qutip
+import pyket
+
 import matplotlib.pyplot as plt
  
 import numpy as np
-fock_N1 = 3
-fock_N2 = 3
+fock_N1 = 14
+fock_N2 = 14
 #basic enery parameters
 w0 = 3
 v0 = 4

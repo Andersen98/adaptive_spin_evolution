@@ -36,15 +36,18 @@ bool param_vals::load_json(std::istream &ifs){
   for(rj::SizeType i = 0; i < psi.Size(); i++){
     complex<double> amp(psi[i]["re"].GetDouble(),psi[i]["im"].GetDouble());
     bool spin = psi[i]["spin"].GetBool();
-    int mode_idx = psi[i]["idx"].GetInt();
-    int n = psi[i]["n"].GetInt();
-
-    simple_ket k;
+    state_ket k;
     k.amp = amp;
     k.spin = spin;
-    k.mode = mode_idx;
-    k.n = n;
+    k.idx = state_ket::empty_idx;
+    assert(psi[i]["modes"].IsArray());
+    for(rj::SizeType j = 0; j < psi[i]["modes"].Size(); i++){
+      int mode_idx = psi[i]["modes"][j]["idx"].GetInt();
+      int n = psi[i]["modes"][j]["n"].GetInt();
+      k.set_mode(mode_idx,n);
+    }
     initial_state.push_back(k);
+    
   }
 
   //----------energy---------

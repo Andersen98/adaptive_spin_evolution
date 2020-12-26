@@ -21,7 +21,7 @@ bool hamiltonian::grow_configuration_space(int idx){
       if( (kp.raised.idx != state_ket::null_idx) && (magnitude* g[level+1][j]> params.energy_cutoff) ){
 	psi_delta.push_back(kp.raised);
       }
-      if( (kp.lowered.idx != state_ket::null_idx) && (magnitude*g[level+1][j] > params.energy_cutoff)){
+      if( (kp.lowered.idx != state_ket::null_idx) && (magnitude*g[level][j] > params.energy_cutoff)){
 	psi_delta.push_back(kp.lowered);
       }
 
