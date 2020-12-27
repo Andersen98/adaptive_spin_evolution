@@ -70,8 +70,8 @@ d = {
     "dt":.01
     
 }
-N1 =1
-N2 = 10000
+N1 =2
+N2 = 1000000
 N = N1+N2
 p = pyket.Params()
 p.load_dict(d)

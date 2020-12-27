@@ -15,6 +15,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/banded.hpp>
+#include <boost/numeric/ublas/operation.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include "input_tools.hpp"
 #include "configuration.hpp"
@@ -50,7 +51,7 @@ class hamiltonian{
   typedef vector<state_ket> state_vector;
   typedef state_vector::iterator state_vector_iterator;
   //read write elements via lower triangle
-  typedef boost::numeric::ublas::matrix<double> base_matrix_type;
+  typedef boost::numeric::ublas::matrix<complex<double>> base_matrix_type;
   typedef symmetric_adaptor<base_matrix_type,boost::numeric::ublas::lower> matrix_type;
   typedef boost::numeric::ublas::vector<complex<double>> blas_vec;
   typedef boost::numeric::ublas::banded_matrix<int> banded_matrix_type;

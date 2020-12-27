@@ -1,7 +1,7 @@
 #include "hamiltonian.hpp"
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
-
+#include <boost/numeric/ublas/matrix.hpp>
 void hamiltonian::set_epsilon(double e){
   
   params.energy_cutoff = e;
@@ -116,11 +116,12 @@ void  hamiltonian::run_step(complex<double> factor){
   }
 
   
-  noalias(u) =v+ prod(connection_matrix,v);
-  
+  noalias(u) = v + factor*prod(connection_matrix,v);
+
   for(uint i = 0; i <psi_lbl.size();i++){
     int idx = psi_lbl[i].idx;
-    psi_lbl[i].amp += u[idx];
+    psi_lbl[i].amp = u[idx];
+
   }
   
   normalize_state(psi_lbl);
@@ -195,6 +196,6 @@ std::pair<double,double> hamiltonian::get_blas_spin_pop()const{
     cout << "Error state is in grow, not blas_evolve. run switch_evolve()" <<endl;
     break;
   }
-    
+     
   return result;
 }

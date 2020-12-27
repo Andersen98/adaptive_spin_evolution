@@ -15,7 +15,6 @@ target_sources(HamiltonianFuncs  PRIVATE
 				  configuration.hpp
 				  )
 				  
-target_compile_definitions(HamiltonianFuncs PUBLIC NUM_MODES=1000 NUM_BITS=8)
-target_compile_options(HamiltonianFuncs PUBLIC -fPIC )
+
 target_include_directories(HamiltonianFuncs PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/io_tools )
 

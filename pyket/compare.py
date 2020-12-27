@@ -3,8 +3,8 @@ import qutip
 import matplotlib.pyplot as plt
  
 import numpy as np
-fock_N1 = 3
-fock_N2 = 3
+fock_N1 = 6
+fock_N2 = 6
 #basic enery parameters
 w0 = 3
 v0 = 4
@@ -65,7 +65,7 @@ d = {
     "mode_couplings":[g0,g1],
     "up_energy":.5*w0,
     "down_energy":-.5*w0,
-    "energy_cutoff":0,
+    "energy_cutoff":-1,
     "dt":.01
     
 }
@@ -77,10 +77,12 @@ print(pinit_state)
 print(qinit_state)
 dt = .1
 for i in range(min(fock_N1,fock_N2)-1):
-    print('--------------ITERATION ' +str(i) + '--------------------')    
     h.run_grow()
-    h.run_step(complex(0,-dt))
+h.switch_evolve()
+for i in range(min(fock_N1,fock_N2)-1):
+    print('--------------ITERATION ' +str(i) + '--------------------')    
+    h.blas_evolve(complex(0,-dt))
     qinit_state = qinit_state +complex(0,-dt)*H*qinit_state 
-    print(h.get_state())
-    print(qinit_state.unit())
+    print(h.get_blas_spin_pop())
+    print(qinit_state.unit().ptrace(0))
 

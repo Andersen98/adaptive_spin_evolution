@@ -45,6 +45,6 @@ h = pyket.H(p)
 for i in range(min(fock_N1,fock_N2)-1):
     print('--------------ITERATION ' +str(i) + '--------------------')    
     h.run_grow()
-    #h.run_step(complex(1,0))
+    h.run_step(complex(1,0))
     print(h.get_state())
   

@@ -62,9 +62,9 @@ public:
     std::copy(std::begin(c.rep),std::end(c.rep),std::begin(rep));
   }
   
-  constexpr static int max_level_int = (2<<num_bits -1);
-  constexpr static int num_modes_int = num_modes;
-  constexpr static int num_bits_int = num_bits;
+
+
+
   constexpr static int giant_count = (num_modes*num_bits/64) +1;
   
   
@@ -276,8 +276,7 @@ public:
   typedef partial_config<num_modes,num_bits> Label;
   typedef bool Spin_Type;
 
-  constexpr static int  num_modes_int = num_modes;
-  constexpr static int max_level_int = 1<<num_bits -1;
+
   constexpr static int null_idx = -1;
   constexpr static int empty_idx = -2;
   
