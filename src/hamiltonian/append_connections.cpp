@@ -22,7 +22,7 @@ void hamiltonian::append_connections(state_vector &psi_mixed ){
 
 
   if(psi_mixed.size() > connection_matrix.size1()){
-    grow_matrix(2*psi_mixed.size());
+    grow_matrix(psi_mixed.size());
     
   }
 

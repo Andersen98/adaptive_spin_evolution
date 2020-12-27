@@ -49,11 +49,11 @@ pinit_state = pyket.StateVector()
 
 ket = pyket.StateKet()
 ket.set_spin(True)
-ket.set_amp(complex(.5,0))
+ket.set_amp(complex(1,0))
 pinit_state.push_back(ket)
 ket = pyket.StateKet()
 ket.set_mode(0,1)
-ket.set_amp(complex(.5,0))
+ket.set_amp(complex(0,0))
 pinit_state.push_back(ket)
 ket = pyket.StateKet()
 
@@ -62,15 +62,15 @@ d = {
     "run_id":1420,
     "output_directory":"~/code/scratch",
     "initial_state":pinit_state,
-    "mode_energies":[v0,v1],
-    "mode_couplings":[g0,g1],
+    "mode_energies":np.linspace(0,10,1000),
+    "mode_couplings":np.linspace(0,.0001,1000),
     "up_energy":.5*w0,
     "down_energy":-.5*w0,
-    "energy_cutoff":.00001,
+    "energy_cutoff":.00005,
     "dt":.01
     
 }
-N1 =100
+N1 =1
 N2 = 10000
 N = N1+N2
 p = pyket.Params()
@@ -90,13 +90,19 @@ for i in range(N1):
     t[i] = dt*i
     up_list[i] = up
 h.set_zero_except_init()
+h.switch_evolve()
+i_next = N1
 for i in range(N1,N):
-    h.run_step(complex(0,-dt))
-    up,down= h.get_spin_pop()
-    num_states[i] = h.get_size()
-    up_list[i] = up
-    t[i] = i*dt
-    
+    h.blas_evolve(complex(0,-dt))
+    if(i%10 == 0):
+        up,down= h.get_blas_spin_pop()
+        num_states[i_next] = h.get_size()
+        up_list[i_next] = up
+        t[i_next] = i*dt
+        i_next = i_next +1
+t= np.resize(t,i_next)
+up_list = np.resize(up_list,i_next)
+num_states = np.resize(num_states,i_next)
 fig, ax = plt.subplots(2,1,figsize=(9,4))  # Create a figure containing a single axes.
 ax[0].plot(t,up_list)
 ax[1].plot(t,num_states)

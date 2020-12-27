@@ -11,9 +11,10 @@
 #include <cmath>
 #include <iterator>
 #include <tuple>
-
+#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
+#include <boost/numeric/ublas/banded.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include "../io_tools/input_tools.hpp"
 #include "../configuration.hpp"
@@ -51,6 +52,8 @@ class hamiltonian{
   //read write elements via lower triangle
   typedef boost::numeric::ublas::matrix<double> base_matrix_type;
   typedef symmetric_adaptor<base_matrix_type,boost::numeric::ublas::lower> matrix_type;
+  typedef boost::numeric::ublas::vector<complex<double>> blas_vec;
+  typedef boost::numeric::ublas::banded_matrix<int> banded_matrix_type;
   struct dir_edge_mode{
     uint out_idx;
     int connection_mode;
@@ -81,8 +84,10 @@ class hamiltonian{
   uint matrix_idx_size;
   base_matrix_type base_matrix;
   matrix_type connection_matrix;
-
-
+  banded_matrix_type spin_up_matrix;
+  banded_matrix_type spin_down_matrix;
+  blas_vec u;
+  blas_vec v;
   //grow_configuration_space.cpp
   bool grow_configuration_space(int idx);
 
@@ -110,7 +115,11 @@ class hamiltonian{
 public:
   array<int,NUM_MODES> mode_cap_exceeded;
 
-  
+  int evolve_state;
+  constexpr static int grow_state = -1;
+  constexpr static int blas_state0 = 0;
+  constexpr static int blas_state1 = 1;
+
   //setup.cpp
   hamiltonian(const param_vals &params_);
   hamiltonian(const std::string &json_arg);
@@ -123,7 +132,9 @@ public:
   void set_epsilon(double e);
   void set_zero_except_init();
   void run_step(complex<double> factor);
-
+  void switch_evolve();
+  void blas_evolve( complex<double> factor);
+  std::pair<double,double> get_blas_spin_pop()const;
   //odeint_evolve
   void odeint_evolve(double t1,double dt);
 

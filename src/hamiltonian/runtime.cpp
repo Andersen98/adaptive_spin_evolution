@@ -107,15 +107,16 @@ void  hamiltonian::run_step(complex<double> factor){
   //enter+leave with psi_amp set equal to psi_lbl set
   //enter+leave with psi_amp sorted by amplitude
   using namespace std;
-  typedef boost::numeric::ublas::vector<complex<double>> blas_vec;
-  blas_vec v(connection_matrix.size2());
+  using namespace boost::numeric::ublas;
+  v.resize(connection_matrix.size2());
+  u.resize(connection_matrix.size2());
   for(uint i = 0; i < psi_lbl.size();i++){
     int idx = psi_lbl[i].idx;
     v[idx] = factor*psi_lbl[i].amp;
   }
 
   
-  blas_vec u(boost::numeric::ublas::prod(v,connection_matrix));
+  noalias(u) =v+ prod(connection_matrix,v);
   
   for(uint i = 0; i <psi_lbl.size();i++){
     int idx = psi_lbl[i].idx;
@@ -126,4 +127,74 @@ void  hamiltonian::run_step(complex<double> factor){
   copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
   sort(psi_amp.begin(),psi_amp.end(),[](const auto &it1,const auto &it2)
   {return std::norm(it1.amp)>std::norm(it2.amp);});
+}
+
+void hamiltonian::switch_evolve(){
+  spin_up_matrix.resize(psi_lbl.size(),psi_lbl.size(),0,0);
+  spin_down_matrix.resize(psi_lbl.size(),psi_lbl.size(),0,0);
+  u.resize(connection_matrix.size2());
+  v.resize(connection_matrix.size2());
+  for(uint i=0; i < psi_lbl.size(); i++){
+    int idx = psi_lbl[i].idx;
+    v[idx] = psi_lbl[i].amp;
+    if(psi_lbl[i].spin){
+      spin_up_matrix(idx,idx) = 1;
+      spin_down_matrix(idx,idx) = 0;
+    }else{
+      spin_up_matrix(idx,idx) = 0;
+      spin_down_matrix(idx,idx) = 1;
+    }
+      
+  }
+  
+
+  evolve_state = blas_state0;
+  
+  
+}
+void hamiltonian::blas_evolve(complex<double> factor){
+  using namespace std;
+  using namespace boost::numeric::ublas;
+
+  switch(hamiltonian::evolve_state){
+  case(blas_state0):
+    noalias(u) = v + factor*prod(connection_matrix,v);
+    u = (1.0/norm_2(u))*u;
+    evolve_state = blas_state1;
+    break;
+  case(hamiltonian::blas_state1):
+    noalias(v) = u + factor*prod(connection_matrix,u);
+    v = (1.0/norm_2(v))*v;
+    evolve_state = blas_state0;
+    break;
+  default:
+    cout << "Error state is in grow, not blas_evolve. run switch_evolve()" <<endl;
+    break;
+  }
+    
+  
+}
+
+std::pair<double,double> hamiltonian::get_blas_spin_pop()const{
+  
+  using namespace std;
+  using namespace boost::numeric::ublas;
+  pair<double,double> result;
+
+
+  switch(hamiltonian::evolve_state){
+  case(blas_state0):
+    result.first = norm_2_square(blas_vec(prod(spin_up_matrix,v)));
+    result.second = norm_2_square(blas_vec(prod(spin_down_matrix,v)));
+    break;
+  case(hamiltonian::blas_state1):
+    result.first = norm_2_square(blas_vec(prod(spin_up_matrix,u)));
+    result.second = norm_2_square(blas_vec(prod(spin_down_matrix,u)));
+    break;
+  default:
+    cout << "Error state is in grow, not blas_evolve. run switch_evolve()" <<endl;
+    break;
+  }
+    
+  return result;
 }

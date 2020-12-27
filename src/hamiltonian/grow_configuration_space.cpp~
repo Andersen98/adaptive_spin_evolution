@@ -1,0 +1,65 @@
+#include "hamiltonian.hpp"
+
+
+//returns true to halt evaluation
+bool hamiltonian::grow_configuration_space(int idx){
+    bool stop = false;
+
+    double premagnitude = abs_sqrd(psi_amp[idx]);
+    if(g[num_levels-1][0]*premagnitude < params.energy_cutoff){
+      return true;
+    }
+
+    //diagonal term
+    // Sum omega_j n_j + params.emitter_energy;
+    int j = 0;
+    complex<double> prefactor = std::complex<double>(0,-1) * psi_amp[idx].amp;
+    while((j < NUM_MODES) && (params.energy_cutoff < premagnitude*g[num_levels-1][j]) ){
+
+      int level = psi_amp[idx].get_mode(j);
+      switch(level){
+      case(0):
+	//ground state, only raise.
+	if( (params.energy_cutoff < premagnitude*g[level+1][j] ) ){
+	  psi_delta.push_back(psi_amp[idx]);
+	  psi_delta.back().spin = !psi_delta.back().spin;
+	  psi_delta.back().increment_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
+	}
+	break;
+      case((1<<NUM_BITS)-1):
+	//max state, only lower
+	if(params.energy_cutoff < premagnitude*g[level][j]){
+	  psi_delta.push_back(psi_amp[idx]);
+	  psi_delta.back().spin = !psi_delta.back().spin;
+	  psi_delta.back().decrement_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
+	}
+	break;
+      default:
+	
+	bool should_raise = params.energy_cutoff < premagnitude*g[level+1][j];
+	bool should_lower = params.energy_cutoff < premagnitude*g[level][j];
+	
+	if(should_raise && should_lower ){
+	  //raise
+	  psi_delta.push_back(psi_amp[idx]);
+	  psi_delta.back().spin = !psi_delta.back().spin;
+	  psi_delta.back().increment_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
+	  //lower
+	  psi_delta.push_back(psi_amp[idx]);
+	  psi_delta.back().spin = !psi_delta.back().spin;
+	  psi_delta.back().decrement_mode(j);
+	  psi_delta.back().idx = state_ket::empty_idx;
+	}
+	break;
+
+
+      }
+      j++;
+    }
+   
+    return(stop);
+
+}

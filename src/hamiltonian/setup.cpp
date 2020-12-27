@@ -4,7 +4,7 @@
 
 hamiltonian::hamiltonian(const std::string &json_str):hamiltonian(load_json_str(json_str)){}
 
-hamiltonian::hamiltonian(const param_vals &params_):g{{}},m{},params(params_),new2old{},old2new{},num_levels(1<<NUM_BITS),psi_delta(0),psi_lbl(0),psi_amp(0),state_connections(0),matrix_idx_size(0),base_matrix(params.initial_state.size(),params.initial_state.size()),connection_matrix(base_matrix),mode_cap_exceeded{}{
+hamiltonian::hamiltonian(const param_vals &params_):g{{}},m{},params(params_),new2old{},old2new{},num_levels(1<<NUM_BITS),psi_delta(0),psi_lbl(0),psi_amp(0),state_connections(0),matrix_idx_size(0),base_matrix(params.initial_state.size(),params.initial_state.size()),connection_matrix(base_matrix),u(params.initial_state.size()),v(params.initial_state.size()),mode_cap_exceeded{}{
 
   
   vector<pair<int,double>> idx_g_pairs(NUM_MODES);
@@ -70,7 +70,7 @@ hamiltonian::hamiltonian(const param_vals &params_):g{{}},m{},params(params_),ne
   void hamiltonian::setup_connections(){
 
     if(connection_matrix.size1()< psi_lbl.size()){
-      grow_matrix(2*psi_lbl.size());
+      grow_matrix(psi_lbl.size());
     }
     
     //1 root node in psi_lbl
