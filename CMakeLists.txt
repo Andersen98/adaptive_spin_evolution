@@ -36,7 +36,7 @@ add_library(HamiltonianFuncs STATIC "")
 add_subdirectory(src)
 
 #find_path (${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11)
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11/CMakeLists.txt)
        execute_process(COMMAND git submodule update --init -- external/pybindll
                            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
