@@ -271,10 +271,10 @@ class State_Ket{
   template< int num_modes_, int num_bits_>
   friend std::ostream& operator<<( std::ostream&, const State_Ket<num_modes_,num_bits>& p );
 public:
-
+  typedef bool Spin_Type ;
   typedef std::complex<double> Amplitude;
   typedef partial_config<num_modes,num_bits> Label;
-  typedef bool Spin_Type;
+
 
 
   constexpr static int null_idx = -1;

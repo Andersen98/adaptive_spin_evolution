@@ -66,47 +66,29 @@ void hamiltonian::normalize_state(state_vector &p){
   
 }
 
-void hamiltonian::update_matrix_diag(const state_ket &k){
+std::complex<double> hamiltonian::matrix_diag(const state_ket &k){
   
-
-  update_matrix_diag_only_spin((uint)k.idx,k.spin);
+  std::complex<double> result = 0;
+  
+  result += matrix_diag_only_spin(k.spin);
   
   for(int i = 0; i < NUM_MODES; i++){
     
     int level = k.get_mode(i);
-    update_matrix_diag_only_mode((uint)k.idx,i,level);
+    result += matrix_diag_only_mode(i,level);
   }
-
+  return result;
 }
 
-void hamiltonian::update_matrix_diag_only_spin(uint update_idx, bool spin){
-
-  switch(spin){
-  case(true):
-    connection_matrix(update_idx,update_idx) += params.up_energy;
-    break;
-  default:
-    connection_matrix(update_idx,update_idx) += params.down_energy;
-    break;
-    
-  }
+std::complex<double> hamiltonian::matrix_diag_only_spin( bool spin){
+  return std::complex<double>(spin?params.up_energy:params.down_energy,0);
 }
-void hamiltonian::update_matrix_diag_only_mode(uint update_idx, int mode, int level){
 
-  connection_matrix(update_idx,update_idx) += (double)level*m[mode];
+std::complex<double> hamiltonian::matrix_diag_only_mode(int mode, int level){
+  assert( mode < NUM_MODES);
+  assert(level < ((1<<NUM_BITS)-1));
+  return(std::complex<double>((double)level*m[mode],0));
   
   
 }
-void hamiltonian::grow_matrix(uint new_size){
-  assert(new_size > connection_matrix.size1());
-  base_matrix_type b( boost::numeric::ublas::zero_matrix<double>(new_size,new_size));
-  matrix_type c(b);
-  for(uint i=0;i < connection_matrix.size1(); i++){
-    for(uint j=0; j <=i; j++){
-      c(i,j) = connection_matrix(i,j);
-    }
-  }
-  base_matrix = b;
-  connection_matrix = c;
 
-}

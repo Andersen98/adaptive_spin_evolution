@@ -11,17 +11,12 @@
 #include <cmath>
 #include <iterator>
 #include <tuple>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/symmetric.hpp>
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-#include <boost/numeric/ublas/io.hpp>
+
 #include "input_tools.hpp"
 #include "configuration.hpp"
-
-
-
+#include <unsupported/Eigen/MatrixFunctions>
+#include <Eigen/SparseCore>
+#include <Eigen/Core>
 //numeric
 using std::complex;
 using std::abs;
@@ -42,19 +37,18 @@ using std::for_each;
 using std::copy;
 
 
-//ublas
 
-using boost::numeric::ublas::symmetric_adaptor;
+
+
 class hamiltonian{
   
   typedef State_Ket<NUM_MODES,NUM_BITS> state_ket;
   typedef vector<state_ket> state_vector;
   typedef state_vector::iterator state_vector_iterator;
+  
   //read write elements via lower triangle
-  typedef boost::numeric::ublas::matrix<complex<double>> base_matrix_type;
-  typedef symmetric_adaptor<base_matrix_type,boost::numeric::ublas::lower> matrix_type;
-  typedef boost::numeric::ublas::vector<complex<double>> blas_vec;
-  typedef boost::numeric::ublas::banded_matrix<int> banded_matrix_type;
+
+  
   struct dir_edge_mode{
     uint out_idx;
     int connection_mode;
@@ -80,26 +74,25 @@ class hamiltonian{
   state_vector psi_delta; //non-sorted (new terms added each step)
   state_vector psi_lbl; //label sorted
   state_vector psi_amp; //amp sorted
-
-  vector<vector<dir_edge_mode>> state_connections;
-  uint matrix_idx_size;
-  base_matrix_type base_matrix;
-  matrix_type connection_matrix;
-  banded_matrix_type spin_up_matrix;
-  banded_matrix_type spin_down_matrix;
-  blas_vec u;
-  blas_vec v;
+  typedef Eigen::Triplet<std::complex<double>> T;
+  typedef Eigen::SparseMatrix<std::complex<double>> SpMat;
+  typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> ComplexVec;
+   
+  SpMat H_matrix;
+  ComplexVec psi_u;
+  ComplexVec psi_uinit;
+  SpMat H_exp;
+  Eigen::Matrix<int,2, Eigen::Dynamic> SpinMatrix;
+  std::vector<T> state_connections;
+  int next_idx;
+  
   //grow_configuration_space.cpp
   bool grow_configuration_space(int idx);
-
-  //evolve_space.cpp
-  void evolve_space(double dt);
 
   //helper used by append_connections
   //append_connections.cpp
   int binary_search_state(const state_ket &k,const state_vector &psi_search)const;
-  void append_connections(state_vector &psi_mixed);
-  void update_connection_matrix();
+  void add_connection(state_ket &k, state_vector &psi_mixed);
   //merge_states.cpp
   void merge_states();
 
@@ -109,17 +102,12 @@ class hamiltonian{
   //core.cpp
   ket_pair get_connected_states(const state_ket &k,const int mode);
   static void normalize_state(state_vector &p);
-  void update_matrix_diag(const state_ket &k);
-  void update_matrix_diag_only_spin(uint update_idx,bool spin);
-  void update_matrix_diag_only_mode(uint update_idx,int mode, int level);
-  void grow_matrix(uint new_size);
+  std::complex<double> matrix_diag(const state_ket &k);
+  std::complex<double> matrix_diag_only_spin(bool spin);
+  std::complex<double> matrix_diag_only_mode(int mode, int level);
+
 public:
   array<int,NUM_MODES> mode_cap_exceeded;
-
-  int evolve_state;
-  constexpr static int grow_state = -1;
-  constexpr static int blas_state0 = 0;
-  constexpr static int blas_state1 = 1;
 
   //setup.cpp
   hamiltonian(const param_vals &params_);
@@ -127,26 +115,22 @@ public:
   
 
   //runtime.cpp
-  void run_grow_evolve(double dt);
+  void reset();
+  void reset_with_state(state_vector init_state);
   void run_grow();
-  void run_evolve(double dt);
   void set_epsilon(double e);
   void set_zero_except_init();
   void run_step(complex<double> factor);
-  void switch_evolve();
-  void blas_evolve( complex<double> factor);
-  std::pair<double,double> get_blas_spin_pop()const;
-  //odeint_evolve
-  void odeint_evolve(double t1,double dt);
-
+  void store_matrix();
+  void store_vector();
+  pair<double,double> evolve_state(complex<double> time);
   //par_runtime.cpp
   void par_test_one();
   void par_test_two();
-  
+
   //output.cpp
   pair<double,double> get_emitter_cavity_prob()const;
   state_vector get_state()const;
-  matrix_type &get_matrix();
   int get_psi_size()const;
   pair<double,double> get_spin_pop()const;
   array<tuple<int,double,double>,NUM_MODES> get_modeLbl_quanta_pop()const;

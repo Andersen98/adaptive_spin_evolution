@@ -8,9 +8,6 @@ hamiltonian::state_vector hamiltonian::get_state()const{
   return state_vector(psi_lbl);
 }
 
-hamiltonian::matrix_type &hamiltonian::get_matrix(){
-  return(connection_matrix);
-}
 int hamiltonian::get_psi_size()const{
     return psi_lbl.size();
   }

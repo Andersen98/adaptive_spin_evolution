@@ -1,3 +1,4 @@
+#include "pyket_config.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/complex.h>
@@ -10,6 +11,7 @@
 #include <complex>
 #include <memory>
 #include <algorithm>
+
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
 
@@ -25,7 +27,7 @@ using state_ket = State_Ket<NUM_MODES,NUM_BITS>;
 using state_vector = std::vector<state_ket>;
 
 
-PYBIND11_MODULE(pyket,m){
+PYBIND11_MODULE(PYKET,m){
   m.doc() = "adaptive spin evolution ported to python";
   m.def("num_modes",[](){return int( NUM_MODES);},"Number of allowed modes in a state");
   m.def("num_bits", [](){return int(NUM_BITS);},"Number of bits that can store a level");
@@ -80,8 +82,12 @@ PYBIND11_MODULE(pyket,m){
     .def(py::init([](param_vals &p){
       return std::unique_ptr<hamiltonian>(new hamiltonian(p));
     }))
+    .def("store_matrix",&hamiltonian::store_matrix)
+    .def("store_vector",&hamiltonain::store_vector)
+    .def("reset",&hamiltonian::reset)
+    .def("reset_with_state",&hamiltonian::reset_with_state)
     .def("run_step", &hamiltonian::run_step)
-    .def("run_grow",&hamiltonian::run_grow)
+    .def("grow",&hamiltonian::run_grow)
     .def("get_state", &hamiltonian::get_state)
     .def("get_size", &hamiltonian::get_psi_size)
     .def("get_spin_pop",&hamiltonian::get_spin_pop)
@@ -89,7 +95,6 @@ PYBIND11_MODULE(pyket,m){
     .def("get_mode_pop",&hamiltonian::get_modeLbl_quanta_pop)
     .def("set_zero_except_init",&hamiltonian::set_zero_except_init)
     .def("set_epsilon",&hamiltonian::set_epsilon)
-    .def("run_ode_evolve",&hamiltonian::odeint_evolve)
     .def("get_matrix",[](hamiltonian &h){
       // Redirect cout.
       streambuf* oldCoutStreamBuf = cout.rdbuf();
@@ -97,17 +102,14 @@ PYBIND11_MODULE(pyket,m){
       cout.rdbuf( strCout.rdbuf() );
 
       // This goes to the string stream.
-      cout << h.get_matrix() ;
+      cout << "(TODO) not implimented" ;
 
       // Restore old cout.
       cout.rdbuf( oldCoutStreamBuf );
       
       
       return strCout.str();
-    })
-    .def("switch_evolve",&hamiltonian::switch_evolve)
-    .def("blas_evolve",&hamiltonian::blas_evolve)
-    .def("get_blas_spin_pop",&hamiltonian::get_blas_spin_pop);
+    });
   
   py::class_<std::vector<int>>(m, "IntVector")
     .def(py::init<>())

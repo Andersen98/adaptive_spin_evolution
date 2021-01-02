@@ -14,67 +14,56 @@ int hamiltonian::binary_search_state(const state_ket &k,const state_vector &psi_
     return(result);
   }
 
+
+
 //psi_mixed is a sorted vector where some elements are 'colored' empty
 //and other elements are 'colored' with a defined idx.
 //each step, we find an empy element 'k', find k's connections
 //to non empy elements. then 'color' k with an idx
-void hamiltonian::append_connections(state_vector &psi_mixed ){
-
-
-  if(psi_mixed.size() > connection_matrix.size1()){
-    grow_matrix(psi_mixed.size());
+//-----------------------
+//adds a column to sparse matrix for a given state @ket
+//here row < column so this constructs an upper triangular
+//matrix
+void hamiltonian::add_connection(state_ket &ket,state_vector &psi_mixed){
+  if(ket.idx == state_ket::empty_idx){
+    complex<double> diag_val = 0;
+    diag_val += matrix_diag_only_spin(ket.spin);
+    int update_idx = next_idx++;
     
-  }
-
-  for(auto &ket : psi_mixed){
-    
-    if(ket.idx == state_ket::empty_idx){
-      
-      uint update_idx = state_connections.size();
-      update_matrix_diag_only_spin(update_idx, ket.spin);
-      vector<dir_edge_mode> edges;   
-      //apply hamiltonian
-      for(int i = 0; i < NUM_MODES; i++){
-	 
-	ket_pair kp = get_connected_states(ket,i);
-	bool raised = kp.raised.idx==state_ket::empty_idx;
-	bool lowered = kp.lowered.idx==state_ket::empty_idx;
-	uint level = ket.get_mode(i);
-	update_matrix_diag_only_mode(update_idx,i,level);
-	if(raised){
-	  //look for an instance
-	  int vec_idx = binary_search_state(kp.raised,psi_mixed);
-	  if(vec_idx > -1){
-	    dir_edge_mode em;
-	    em.out_idx = psi_mixed[vec_idx].idx;
-	    em.connection_mode = i;
-	    em.raised = true;
-	    edges.push_back(em);
-	    connection_matrix(update_idx,em.out_idx) =
-	      g[level+1][i];
-	  }
+  
+    //apply hamiltonian
+    for(int i = 0; i < NUM_MODES; i++){	 
+      ket_pair kp = get_connected_states(ket,i);
+      bool raised = kp.raised.idx==state_ket::empty_idx;
+      bool lowered = kp.lowered.idx==state_ket::empty_idx;
+      int level = ket.get_mode(i);
+      diag_val += matrix_diag_only_mode(i,level);
+      if(raised){
+	//look for an instance
+	int vec_idx = binary_search_state(kp.raised,psi_mixed);
+	if(vec_idx > -1){
+	  int row = psi_mixed[vec_idx].idx; //desination
+	  int col = update_idx;
+	  complex<double> val = complex<double>(g[level+1][i],0);
+	  state_connections.push_back(T(row,col,val));
 	}
-	if(lowered){
-	  int vec_idx = binary_search_state(kp.lowered,psi_mixed);
-	  if(vec_idx>-1){
-	    dir_edge_mode em;
-	    em.out_idx = psi_mixed[vec_idx].idx;
-	    em.connection_mode = i;
-	    em.raised = false;
-	    edges.push_back(em);
-	    connection_matrix(update_idx,em.out_idx) =
-	      g[level][i];
-	  }
+      }
+      if(lowered){
+	int vec_idx = binary_search_state(kp.lowered,psi_mixed);
+	if(vec_idx>-1){
+	  int row = psi_mixed[vec_idx].idx;
+	  int col = update_idx;
+	  complex<double> val = complex<double>(g[level][i],0);
+	  state_connections.push_back(T(row,col,val));
 	}
-
-      }//end mode loop
-
-    
-      //'color' k
-      ket.idx = int(state_connections.size());
-
+      }
       
-      state_connections.push_back(edges);
-    }//end if empty_idx
-  }//end k loop
+    }//end mode loop
+    state_connections.push_back(T(update_idx,update_idx,diag_val));
+    //'color' k
+    ket.idx = update_idx; 
+    
+  }//end if
 }
+  
+

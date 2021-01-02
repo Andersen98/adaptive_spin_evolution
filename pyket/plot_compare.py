@@ -63,15 +63,15 @@ d = {
     "output_directory":"~/code/scratch",
     "initial_state":pinit_state,
     "mode_energies":np.linspace(0,10,1000),
-    "mode_couplings":np.linspace(0,.0001,1000),
+    "mode_couplings":.1 +np.linspace(.00001,.0001,1000),
     "up_energy":.5*w0,
     "down_energy":-.5*w0,
-    "energy_cutoff":.00005,
+    "energy_cutoff":-1,
     "dt":.01
     
 }
-N1 =2
-N2 = 1000000
+N1 =1
+N2 = 1000
 N = N1+N2
 p = pyket.Params()
 p.load_dict(d)
@@ -84,12 +84,13 @@ print(h.get_state())
 print(h.get_matrix())
 for i in range(N1):
     h.run_grow()
+ #   print(h.get_matrix())
     h.run_step(complex(0,- dt))
     up,down = h.get_spin_pop()
     num_states[i] = h.get_size()
     t[i] = dt*i
     up_list[i] = up
-h.set_zero_except_init()
+
 h.switch_evolve()
 i_next = N1
 for i in range(N1,N):
@@ -108,3 +109,9 @@ ax[0].plot(t,up_list)
 ax[1].plot(t,num_states)
 plt.show()
 print(up_list)
+
+
+def pyket_test_num_modes100(t dt):
+    import pyket100_8 as pyket
+    
+    

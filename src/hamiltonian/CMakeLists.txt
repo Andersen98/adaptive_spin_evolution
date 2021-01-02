@@ -1,12 +1,10 @@
 target_sources(HamiltonianFuncs  PRIVATE
 				  append_connections.cpp
-				  evolve_space.cpp
 				  merge_states.cpp
 				  output.cpp
 				  runtime.cpp
 				  core.cpp
-				  grow_configuration_space.cpp
-				  odeint_evolve.cpp
+				  grow_configuration_space.cpp				  
 				  par_runtime.cpp
 				  setup.cpp
 				  io_tools/input_tools.hpp

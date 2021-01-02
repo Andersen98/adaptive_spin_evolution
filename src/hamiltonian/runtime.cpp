@@ -1,44 +1,15 @@
 #include "hamiltonian.hpp"
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
+#include <unsupported/Eigen/MatrixFunctions>
 void hamiltonian::set_epsilon(double e){
   
   params.energy_cutoff = e;
 
 }
-void hamiltonian::run_grow_evolve(double dt){
-  mode_cap_exceeded.fill(-1);
-  psi_delta.resize(0);
-  psi_delta.reserve(NUM_MODES*psi_amp.size());
 
-  //TODO: Maybe add a threshold for number of runs where the
-  //configuration has not grown. 
-  bool stop = false;
-  for(int i = 0; i < int( psi_amp.size()); i++){
-    stop = grow_configuration_space(i);
-    if(stop){
-      break;
-	
-    }
-  }
-  
-  merge_states();
-  
-  append_connections(psi_amp);
-  
-  evolve_space(dt);
-  
-  normalize_state(psi_amp);
-  psi_lbl.resize(psi_amp.size());
-  copy(psi_amp.begin(),psi_amp.end(),psi_lbl.begin());
-  sort(psi_amp.begin(),psi_amp.end(),
-       [](auto &it1,auto &it2){return norm(it1.amp) > norm(it2.amp);});
-}
 void hamiltonian::run_grow(){
   //assumes psi_amp is sorted by amplitude entering and leaving
   //assumes psi_lbl is sorted by label  entering and leaving
-
+  
   mode_cap_exceeded.fill(-1);
   psi_delta.resize(0);
   psi_delta.reserve(NUM_MODES*psi_amp.size());
@@ -55,8 +26,10 @@ void hamiltonian::run_grow(){
   
   merge_states();
   
-  append_connections(psi_amp);
-
+  for(auto &k: psi_amp){
+    add_connection(k,psi_amp);
+  }
+ 
   psi_lbl.resize(psi_amp.size());
   copy(psi_amp.begin(),psi_amp.end(),psi_lbl.begin());
   sort(psi_amp.begin(),psi_amp.end(),
@@ -65,12 +38,6 @@ void hamiltonian::run_grow(){
 
 }
 
-void hamiltonian::run_evolve(double dt){
-  
-  evolve_space(dt);
-  normalize_state(psi_amp);
-  
-}
 
 void hamiltonian::set_zero_except_init(){
   using namespace std;
@@ -102,100 +69,107 @@ void hamiltonian::set_zero_except_init(){
   });
     
 }
+void hamiltonian::store_vector(){
+  psi_u.resize(psi_lbl.size());
+  psi_uinit.resize(psi_lbl.size());
+  SpinMatrix.resize(2,psi_lbl.size());
+  for(uint i = 0; i < psi_lbl.size(); i++){
+    int idx = psi_lbl[i].idx;
+    psi_u[idx] = psi_lbl[i].amp;
+    if(idx < params.initial_state.size()){
+      int j = binary_search_state(psi_lbl[i],params.initial_state);
+      psi_uinit[idx] = params.initial_state[j].amp;
+    }else{
+      psi_uinit[idx] = 0;
+    }
 
+    if(psi_lbl[i].spin){
+      SpinMatrix(0,idx) =1;
+      SpinMatrix(1,idx) = 0;
+    }else{
+      SpinMatrix(0,idx) = 0;
+      SpinMatrix(1,idx) = 1;
+    }
+  }
+ 
+  
+}
+void hamiltonian::store_matrix(){
+  using namespace Eigen;
+  H_matrix.resize(psi_lbl.size(),psi_lbl.size());
+  H_matrix.setFromTriplets(state_connections.begin(),state_connections.end());
+  H_exp.resize(psi_lbl.size(),psi_lbl.size());
+  
+}
+std::pair<double,double> hamiltonian::evolve_state(complex<double> time){
+  std::pair<double,double> result;
+  SpMat U = H_exp.pow(complex<double>(0,-time));
+  Eigen::Matrix<std::complex<double>, 2, Eigen::Dynamic> v = SpinMatrix*(U*psi_uinit);
+  Eigen::Matrix<std::complex<double>, 2, 1> u = v.colwise().norm();
+  result = std::make_pair(u(0,0),u(0,1));
+
+}
 void  hamiltonian::run_step(complex<double> factor){
   //enter+leave with psi_amp set equal to psi_lbl set
   //enter+leave with psi_amp sorted by amplitude
-  using namespace std;
-  using namespace boost::numeric::ublas;
-  v.resize(connection_matrix.size2());
-  u.resize(connection_matrix.size2());
-  for(uint i = 0; i < psi_lbl.size();i++){
+  SpMat A(next_idx,next_idx);
+  A.setFromTriplets(state_connections.begin(),state_connections.end());
+  ComplexVec b(psi_lbl.size());
+
+  for(uint i = 0; i < psi_lbl.size(); i++){
     int idx = psi_lbl[i].idx;
-    v[idx] = factor*psi_lbl[i].amp;
+    b[idx] = psi_lbl[i].amp;
   }
+  //did not expect such an awkward expression (sorry)
+  b = b + A.selfadjointView<Eigen::Upper>()*(factor*b);
 
-  
-  noalias(u) = v + factor*prod(connection_matrix,v);
+  for(uint i = 0; i < psi_lbl.size(); i++){
 
-  for(uint i = 0; i <psi_lbl.size();i++){
     int idx = psi_lbl[i].idx;
-    psi_lbl[i].amp = u[idx];
-
-  }
-  
-  normalize_state(psi_lbl);
-  copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
-  sort(psi_amp.begin(),psi_amp.end(),[](const auto &it1,const auto &it2)
-  {return std::norm(it1.amp)>std::norm(it2.amp);});
-}
-
-void hamiltonian::switch_evolve(){
-  spin_up_matrix.resize(psi_lbl.size(),psi_lbl.size(),0,0);
-  spin_down_matrix.resize(psi_lbl.size(),psi_lbl.size(),0,0);
-  u.resize(connection_matrix.size2());
-  v.resize(connection_matrix.size2());
-  for(uint i=0; i < psi_lbl.size(); i++){
-    int idx = psi_lbl[i].idx;
-    v[idx] = psi_lbl[i].amp;
-    if(psi_lbl[i].spin){
-      spin_up_matrix(idx,idx) = 1;
-      spin_down_matrix(idx,idx) = 0;
-    }else{
-      spin_up_matrix(idx,idx) = 0;
-      spin_down_matrix(idx,idx) = 1;
-    }
-      
-  }
-  
-
-  evolve_state = blas_state0;
-  
-  
-}
-void hamiltonian::blas_evolve(complex<double> factor){
-  using namespace std;
-  using namespace boost::numeric::ublas;
-
-  switch(hamiltonian::evolve_state){
-  case(blas_state0):
-    noalias(u) = v + factor*prod(connection_matrix,v);
-    u = (1.0/norm_2(u))*u;
-    evolve_state = blas_state1;
-    break;
-  case(hamiltonian::blas_state1):
-    noalias(v) = u + factor*prod(connection_matrix,u);
-    v = (1.0/norm_2(v))*v;
-    evolve_state = blas_state0;
-    break;
-  default:
-    cout << "Error state is in grow, not blas_evolve. run switch_evolve()" <<endl;
-    break;
-  }
+    psi_lbl[i].amp = b[idx];
     
+  }
+  normalize_state(psi_lbl);
+  std::copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+  std::sort(psi_amp.begin(),psi_amp.end(),
+	    [](const auto &it1,const auto &it2){return std::norm(it1.amp) > std::norm(it2.amp);});
   
 }
 
-std::pair<double,double> hamiltonian::get_blas_spin_pop()const{
-  
-  using namespace std;
-  using namespace boost::numeric::ublas;
-  pair<double,double> result;
+void hamiltonian::reset_with_state(state_vector v){
+  std::copy(v.begin(),v.end(),params.initial_state.begin());
+  reset();
+}
+void hamiltonian::reset(){
+
+  //construct initial states
+  psi_delta.resize(0);
+  psi_lbl.resize(0);
+  psi_amp.resize(0);
+  state_connections.resize(0);
+  next_idx = 0;
+  for(auto &k: params.initial_state){
+    state_ket k_transform;
+      k_transform.idx = state_ket::empty_idx;
+      k_transform.amp = k.amp;
+      k_transform.spin = k.spin;
+      for(uint i = 0; i < NUM_MODES; i++){
+	int level = k.get_mode(new2old[i]);
+	k_transform.set_mode(i,level);
+      }
+      psi_lbl.push_back(k_transform);
+    }
+
+    
+    sort(psi_lbl.begin(),psi_lbl.end(),[](auto &it1,auto &it2){return it1<it2;});
+    
+    setup_connections();
+    
+    normalize_state(psi_lbl);
+    psi_amp.resize(psi_lbl.size());
+    copy(psi_lbl.begin(),psi_lbl.end(),psi_amp.begin());
+    sort(psi_amp.begin(),psi_amp.end(),[](const state_ket &it1,const state_ket &it2){return norm(it1.amp) > norm(it2.amp);});
+    
 
 
-  switch(hamiltonian::evolve_state){
-  case(blas_state0):
-    result.first = norm_2_square(blas_vec(prod(spin_up_matrix,v)));
-    result.second = norm_2_square(blas_vec(prod(spin_down_matrix,v)));
-    break;
-  case(hamiltonian::blas_state1):
-    result.first = norm_2_square(blas_vec(prod(spin_up_matrix,u)));
-    result.second = norm_2_square(blas_vec(prod(spin_down_matrix,u)));
-    break;
-  default:
-    cout << "Error state is in grow, not blas_evolve. run switch_evolve()" <<endl;
-    break;
-  }
-     
-  return result;
 }
