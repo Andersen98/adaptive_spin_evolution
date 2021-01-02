@@ -98,16 +98,18 @@ void hamiltonian::store_matrix(){
   using namespace Eigen;
   H_matrix.resize(psi_lbl.size(),psi_lbl.size());
   H_matrix.setFromTriplets(state_connections.begin(),state_connections.end());
-  H_exp.resize(psi_lbl.size(),psi_lbl.size());
   
 }
-std::pair<double,double> hamiltonian::evolve_state(complex<double> time){
+std::pair<double,double> hamiltonian::evolve_state(double time){
+  using namespace Eigen;
   std::pair<double,double> result;
-  SpMat U = H_exp.pow(complex<double>(0,-time));
-  Eigen::Matrix<std::complex<double>, 2, Eigen::Dynamic> v = SpinMatrix*(U*psi_uinit);
-  Eigen::Matrix<std::complex<double>, 2, 1> u = v.colwise().norm();
-  result = std::make_pair(u(0,0),u(0,1));
-
+  Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> H(psi_lbl.size(),psi_lbl.size());
+  H = H_matrix.selfadjointView<Upper>();
+  //  Eigen::Matrix<std::complex<double>, 2, Eigen::Dynamic>
+  //Eigen::MatrixXd v= SpinMatrix*H.exp();
+  //Eigen::Matrix<std::complex<double>, 2, 1> u = v.colwise().norm();
+  //  result = std::make_pair(u(0,0),u(0,1));
+  return result;
 }
 void  hamiltonian::run_step(complex<double> factor){
   //enter+leave with psi_amp set equal to psi_lbl set

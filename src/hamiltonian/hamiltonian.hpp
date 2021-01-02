@@ -123,7 +123,7 @@ public:
   void run_step(complex<double> factor);
   void store_matrix();
   void store_vector();
-  pair<double,double> evolve_state(complex<double> time);
+  pair<double,double> evolve_state(double time);
   //par_runtime.cpp
   void par_test_one();
   void par_test_two();
