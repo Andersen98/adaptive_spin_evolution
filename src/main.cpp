@@ -82,8 +82,9 @@ PYBIND11_MODULE(PYKET,m){
     .def(py::init([](param_vals &p){
       return std::unique_ptr<hamiltonian>(new hamiltonian(p));
     }))
-    .def("store_matrix",&hamiltonian::store_matrix)
-    .def("store_vector",&hamiltonain::store_vector)
+    .def("store_matrix",&hamiltonian::store_matrix,py::call_guard<py::gil_scoped_release>())
+    .def("store_vector",&hamiltonian::store_vector,py::call_guard<py::gil_scoped_release>())
+    .def("evolve_state",&hamiltonian::evolve_state,py::call_guard<py::gil_scoped_release>())
     .def("reset",&hamiltonian::reset)
     .def("reset_with_state",&hamiltonian::reset_with_state)
     .def("run_step", &hamiltonian::run_step)

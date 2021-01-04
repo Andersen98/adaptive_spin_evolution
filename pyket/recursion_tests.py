@@ -147,8 +147,8 @@ if __name__ == '__main__':
          H = 0.5*w0*oz + v0*a0.dag()*a0 + v1*a1.dag()*a1 + g0*ox*(a0.dag()+a0) + g1*ox*(a1.dag()+a1)
 
          
-         tf1 = .1
-         tf2 = 1
+         tf1 = .05
+         tf2 = 10
          dt = .001
          
             
@@ -178,19 +178,20 @@ if __name__ == '__main__':
          num2 =[0 for x in range(N2)]
          num_qutip2 = [fock_N1*fock_N2*2 for x in range(N2)]
          t2 = [0 for x in range(N2)]
-         h.set_zero_except_init()
+         h.store_vector()
+         h.store_matrix()
+         print("Switching, Size is {0!s}".format(h.get_size()))   
          qinit_state = qutip.tensor(spin,vac0,vac1).unit()
          for i in range(N2):
             print(i)
-            h.run_step(complex(0,-dt))
             qinit_state = qinit_state +complex(0,-dt)*H*qinit_state 
-            up2[i],down = h.get_spin_pop()
+            up2[i],down = h.evolve_state(dt*i)
             up_qutip2[i],down = get_qtip_pop(qinit_state)
             num2[i] = h.get_size()
 
             t2[i] = dt*i
 
-         fig, ax = plt.subplots(2,2 )
+         fig, ax = plt.subplots(2,2 ,figsize=(12,5) )
          # make a little extra space between the subplots
          fig.subplots_adjust(hspace=0.5)
          
@@ -228,7 +229,7 @@ if __name__ == '__main__':
          ax[1][1].set_ylabel('State_Size')
          ax[1][1].grid(True)
          ax[1][1].legend()
-         plt.show()
+         fig.savefig('/home/ethan/code/run_output/outp2q.png',dpi=300)
 
 
 

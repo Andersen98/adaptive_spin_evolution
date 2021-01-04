@@ -17,6 +17,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include <Eigen/SparseCore>
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
 //numeric
 using std::complex;
 using std::abs;
@@ -76,13 +77,16 @@ class hamiltonian{
   state_vector psi_amp; //amp sorted
   typedef Eigen::Triplet<std::complex<double>> T;
   typedef Eigen::SparseMatrix<std::complex<double>> SpMat;
-  typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, 1> ComplexVec;
-   
+  typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic,1> ComplexVec;
+  typedef Eigen::Matrix<std::complex<double>,Eigen::Dynamic,Eigen::Dynamic> ComplexMatrix;
   SpMat H_matrix;
   ComplexVec psi_u;
   ComplexVec psi_uinit;
-  SpMat H_exp;
-  Eigen::Matrix<int,2, Eigen::Dynamic> SpinMatrix;
+  ComplexMatrix H_eigen_vectors;
+  ComplexVec H_eigen_vals;
+  
+  
+  Eigen::Matrix<std::complex<double>,2, Eigen::Dynamic> SpinMatrix;
   std::vector<T> state_connections;
   int next_idx;
   

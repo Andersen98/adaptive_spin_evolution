@@ -15,4 +15,3 @@ target_sources(HamiltonianFuncs  PRIVATE
 				  
 
 target_include_directories(HamiltonianFuncs PUBLIC ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/io_tools )
-

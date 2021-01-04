@@ -7,7 +7,7 @@ int hamiltonian::binary_search_state(const state_ket &k,const state_vector &psi_
     auto psi_el = std::equal_range(psi_search.begin(),psi_search.end(),k,
 			      [](const state_ket &el,const state_ket &val){return el < val;});
 
-    if((psi_el.first != psi_el.second)&& (psi_el.first->idx != state_ket::empty_idx )  ){
+    if(psi_el.first != psi_el.second){
       result = std::distance(psi_search.begin(),psi_el.first);
     }
 
@@ -41,7 +41,7 @@ void hamiltonian::add_connection(state_ket &ket,state_vector &psi_mixed){
       if(raised){
 	//look for an instance
 	int vec_idx = binary_search_state(kp.raised,psi_mixed);
-	if(vec_idx > -1){
+	if( (psi_mixed[vec_idx].idx!=state_ket::empty_idx) &&(vec_idx > -1)){
 	  int row = psi_mixed[vec_idx].idx; //desination
 	  int col = update_idx;
 	  complex<double> val = complex<double>(g[level+1][i],0);
@@ -50,7 +50,7 @@ void hamiltonian::add_connection(state_ket &ket,state_vector &psi_mixed){
       }
       if(lowered){
 	int vec_idx = binary_search_state(kp.lowered,psi_mixed);
-	if(vec_idx>-1){
+	if( (psi_mixed[i].idx != state_ket::empty_idx)&&(vec_idx>-1)){
 	  int row = psi_mixed[vec_idx].idx;
 	  int col = update_idx;
 	  complex<double> val = complex<double>(g[level][i],0);
