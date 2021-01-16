@@ -11,6 +11,8 @@
 #include <cmath>
 #include <iterator>
 #include <tuple>
+#include <memory>
+
 
 #include "input_tools.hpp"
 #include "configuration.hpp"
@@ -18,6 +20,10 @@
 #include <Eigen/SparseCore>
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
+
+//memory
+using std::shared_ptr;
+
 //numeric
 using std::complex;
 using std::abs;
@@ -44,7 +50,7 @@ using std::copy;
 class hamiltonian{
   
   typedef State_Ket<NUM_MODES,NUM_BITS> state_ket;
-  typedef vector<state_ket> state_vector;
+  typedef vector<shared_ptr<state_ket>> state_vector;
   typedef state_vector::iterator state_vector_iterator;
   
   //read write elements via lower triangle
@@ -87,15 +93,13 @@ class hamiltonian{
   
   
   Eigen::Matrix<std::complex<double>,2, Eigen::Dynamic> SpinMatrix;
-  std::vector<T> state_connections;
+  std::vector<T>  state_connections;
   int next_idx;
   
   //grow_configuration_space.cpp
   bool grow_configuration_space(int idx);
 
-  //helper used by append_connections
-  //append_connections.cpp
-  int binary_search_state(const state_ket &k,const state_vector &psi_search)const;
+ 
   void add_connection(state_ket &k, state_vector &psi_mixed);
   //merge_states.cpp
   void merge_states();
@@ -117,7 +121,11 @@ public:
   hamiltonian(const param_vals &params_);
   hamiltonian(const std::string &json_arg);
   
-
+   //helper used by append_connections
+  //append_connections.cpp
+  int binary_search_state(const state_ket &k,const state_vector &psi_search)const;
+  //searched psi_lbl for a particular ket
+  int get_ket_idx(const state_ket &k) const;
   //runtime.cpp
   void reset();
   void reset_with_state(state_vector init_state);
@@ -127,7 +135,10 @@ public:
   void run_step(complex<double> factor);
   void store_matrix();
   void store_vector();
+  std::vector<std::tuple<int,int,std::complex<double>>> get_tuples()const;
+  std::vector<std::pair<int, int>> get_spin_idxs()const;
   pair<double,double> evolve_state(double time);
+  pair<double,double> evolve_step(complex<double> factor);
   //par_runtime.cpp
   void par_test_one();
   void par_test_two();

@@ -12,8 +12,16 @@ int hamiltonian::binary_search_state(const state_ket &k,const state_vector &psi_
     }
 
     return(result);
+}
+int hamiltonian::get_ket_idx(const state_ket &k)const{
+  int result = -1;
+  int i = binary_search_state(k, psi_lbl);
+  if(i > -1){
+    result = psi_lbl[i].idx;
   }
-
+  return (result);
+  
+}
 
 
 //psi_mixed is a sorted vector where some elements are 'colored' empty

@@ -1,5 +1,5 @@
 #include "hamiltonian.hpp"
-
+#include <omp.h>
 void hamiltonian::set_epsilon(double e){
   
   params.energy_cutoff = e;
@@ -37,6 +37,7 @@ void hamiltonian::run_grow(){
 
 
 }
+
 
 
 void hamiltonian::set_zero_except_init(){
@@ -101,22 +102,17 @@ void hamiltonian::store_matrix(){
   using namespace Eigen;
   H_matrix.resize(psi_lbl.size(),psi_lbl.size());
   H_matrix.setFromTriplets(state_connections.begin(),state_connections.end());
-  ComplexMatrix M = H_matrix;
-  M.adjointInPlace();
-
-  SelfAdjointEigenSolver<ComplexMatrix> saes(M,ComputeEigenvectors);
-  
-  H_eigen_vectors = saes.eigenvectors();
-  H_eigen_vals = saes.eigenvalues();
 
   
 
   
 }
-inline std::complex<double> Exp(std::complex<double> x) // the functor we want to apply
-{
-  return std::exp(x);
-}
+struct Exp{
+  std::complex<double> operator()(std::complex<double> x)const{
+    return std::exp(x);
+  }    
+
+};
 
 std::pair<double,double> hamiltonian::evolve_state(double time){
   using namespace Eigen;
@@ -124,7 +120,7 @@ std::pair<double,double> hamiltonian::evolve_state(double time){
   std::pair<double,double> result;
   std::cout << nbThreads()<<std::endl;
 
-  ComplexVec eigen_val_exp = (std::complex<double>(0,-time)*H_eigen_vals).unaryExpr(&Exp);
+  ComplexVec eigen_val_exp = (std::complex<double>(0,-time)*H_eigen_vals).unaryExpr(Exp());
   
   ComplexVec u = H_eigen_vectors*eigen_val_exp.asDiagonal()*H_eigen_vectors.adjoint()*psi_uinit;
 
@@ -137,6 +133,52 @@ std::pair<double,double> hamiltonian::evolve_state(double time){
   //  std::cout <<u2 << std::endl;
   return result;
 }
+
+std::vector<std::tuple<int,int,std::complex<double>>> hamiltonian::get_tuples()const{
+  std::vector<std::tuple<int,int,std::complex<double>>>  result;
+  using namespace std;
+  for(auto &t:state_connections){
+
+    result.push_back(tuple<int,int,complex<double>>{t.row(),t.col(),t.value()});
+  }
+  
+  return result;
+}
+std::vector<std::pair<int, int>> hamiltonian::get_spin_idxs()const{
+  using namespace std;
+  vector<pair<int, int> > result(psi_lbl.size());
+  for(const auto &k: psi_lbl){
+    if(k.spin){
+      result[k.idx] = make_pair(1,0);
+    }else{
+
+      result[k.idx] = make_pair(0,1);
+    }
+    
+  }
+  return result;
+
+}
+
+std::pair<double,double>  hamiltonian::evolve_step(complex<double> factor){
+  
+  using namespace std;
+  using namespace Eigen;
+  omp_set_num_threads(16);
+  psi_u = psi_u + factor*(H_matrix.selfadjointView<Upper>()*psi_u).eval();
+  psi_u.normalize();
+  pair<double,double> result;
+  ComplexVec u = psi_u.conjugate().array()*psi_u.array();
+  u = SpinMatrix*u;
+  
+
+  result.first = real(u[0]);
+  result.second = real(u[1]);
+  return result;
+  
+
+}
+
 void  hamiltonian::run_step(complex<double> factor){
   //enter+leave with psi_amp set equal to psi_lbl set
   //enter+leave with psi_amp sorted by amplitude
