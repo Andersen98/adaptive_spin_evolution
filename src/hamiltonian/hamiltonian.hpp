@@ -21,8 +21,6 @@
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 
-//memory
-using std::shared_ptr;
 
 //numeric
 using std::complex;
@@ -50,7 +48,7 @@ using std::copy;
 class hamiltonian{
   
   typedef State_Ket<NUM_MODES,NUM_BITS> state_ket;
-  typedef vector<shared_ptr<state_ket>> state_vector;
+  typedef vector<state_ket> state_vector;
   typedef state_vector::iterator state_vector_iterator;
   
   //read write elements via lower triangle
