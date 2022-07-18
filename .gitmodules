@@ -23,3 +23,6 @@
 [submodule "extern/format"]
 	path = extern/format
 	url = https://github.com/boostorg/format.git
+[submodule "extern/boost"]
+	path = extern/boost
+	url = https://github.com/boostorg/boost.git
