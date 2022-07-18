@@ -7,10 +7,19 @@
 	url = https://github.com/Orphis/boost-cmake.git
 [submodule "extern/rapidjson"]
 	path = extern/rapidjson
-	url = https://github.com/Tencent/rapidjson.git
+	url = https://github.com/Tencent/rapidjson
 [submodule "extern/-b"]
 	path = extern/-b
 	url = https://github.com/pybind/pybind11.git
 [submodule "extern/eigen"]
 	path = extern/eigen
-	url = https://gitlab.com/libeigen/eigen.git
+	url = https://gitlab.com/libeigen/eigen
+[submodule "extern/program_options"]
+	path = extern/program_options
+	url = https://github.com/boostorg/program_options.git
+[submodule "extern/test"]
+	path = extern/test
+	url = https://github.com/boostorg/test.git
+[submodule "extern/format"]
+	path = extern/format
+	url = https://github.com/boostorg/format.git
