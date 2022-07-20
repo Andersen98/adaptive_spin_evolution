@@ -6,7 +6,7 @@ add_library(HamiltonianFuncs	STATIC
 				  core.cpp
 				  grow_configuration_space.cpp				   setup.cpp
 				  input_tools.cpp
-				  output_tools.cpp
+				  
 				  )
 
 target_compile_options(HamiltonianFuncs PRIVATE -fPIC)

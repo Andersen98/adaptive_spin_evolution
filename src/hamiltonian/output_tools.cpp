@@ -19,7 +19,7 @@ using namespace rapidjson;
 namespace adaptive{
 
 
-  void write_two_vs_time_header(ofstream &o, const param_vals &p, string q1, string q2){
+  void write_two_vs_time_header(std::ofstream &o, const param_vals &p, string q1, string q2){
     o <<format("PSTART~%|1$-d| DSTART~%|2$-d|\n") %5 %7; 
     format lnBrk("%|88T=|\n");
     o << lnBrk;
@@ -29,7 +29,7 @@ namespace adaptive{
     o << lnBrk;   
   }
 
-  void write_two_vs_time(ofstream &o, const param_vals &p, int id, double time,
+  void write_two_vs_time(std::ofstream &o, const param_vals &p, int id, double time,
 				double q1, double q2){
      format
       popFmt("%|1$-d|/%|2$-d|%|13t|%|3$-1.14e|%|38t|%|4$-1.14e|%|63t|%|5$-1.14e|\n");
@@ -39,7 +39,7 @@ namespace adaptive{
   }
 
   
-  void write_spin_population_header(ofstream &o, const param_vals &p){
+  void write_spin_population_header(std::ofstream &o, const param_vals &p){
   o <<format("PSTART~%|1$-d| DSTART~%|2$-d|\n") %5 %7; 
   format lnBrk("%|88T=|\n");
   o << lnBrk;
@@ -50,7 +50,7 @@ namespace adaptive{
 
   }
 
-  void write_spin_population_run(ofstream &o,const param_vals& p, int id, double time,
+  void write_spin_population_run(std::ofstream &o,const param_vals& p, int id, double time,
 				 double up, double down){
     format
       popFmt("%|1$-d|/%|2$-d|%|13t|%|3$-1.14e|%|38t|%|4$-1.14e|%|63t|%|5$-1.14e|\n");
@@ -165,7 +165,7 @@ namespace adaptive{
 
     //write document to stream
     
-    ofstream ofs(out_path.c_str());
+    std::ofstream ofs(out_path.c_str());
     OStreamWrapper osw(ofs);
 
     PrettyWriter<OStreamWrapper> writer(osw);

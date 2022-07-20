@@ -1,5 +1,5 @@
 #include "hamiltonian.hpp"
-#include "../io_tools/input_tools.hpp"
+#include "input_tools.hpp"
 
 
 hamiltonian::hamiltonian(const std::string &json_str):hamiltonian(load_json_str(json_str)){}

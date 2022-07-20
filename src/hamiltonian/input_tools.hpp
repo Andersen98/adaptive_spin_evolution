@@ -26,6 +26,7 @@
 
   
 struct param_vals{
+  typedef State_Ket<NUM_MODES,NUM_BITS> state_ket;
   //rapid json
   bool load_json(std::istream &is);
   
@@ -53,9 +54,15 @@ struct param_vals{
   double tf;
   double dt;
   int N;
+
+  //initial state
+  std::vector<state_ket> initial_state;
   
 };
 param_vals load_json_str(const std::string &s);
+
+
+
 
 
 

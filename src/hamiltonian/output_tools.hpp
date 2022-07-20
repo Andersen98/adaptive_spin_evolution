@@ -11,12 +11,13 @@
 #include <iostream>
 #include <fstream>
 
-#include "../hamiltonian/hamiltonian.hpp"
+#include "hamiltonian.hpp"
+#include "configuration.hpp"
 
 namespace adaptive{
 
-  void write_two_vs_time_header(ofstream &o, const param_vals &p, string q1, string q2);
-  void write_two_vs_time(ofstream &o, const param_vals &p, int id, double time,
+  void write_two_vs_time_header(std::ofstream &o, const param_vals &p, std::string q1, std::string q2);
+  void write_two_vs_time(std::ofstream &o, const param_vals &p, int id, double time,
 				  double q1, double q2);
 
   void write_spin_population_header(std::ofstream &o, const param_vals&);
