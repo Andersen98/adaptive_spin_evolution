@@ -1,0 +1,6 @@
+pytest
+argparse
+pathlib
+matplotlib
+pandas
+seaborn
