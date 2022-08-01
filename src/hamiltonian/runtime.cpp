@@ -37,48 +37,6 @@ void hamiltonian::run_grow(){
 
 
 }
-void hamiltonian::get_decay_diags(int delta_e){
-
-  vector<complex<double>> decay_diags(psi_lbl.size());
-  
-  //for each vector in psi, get the connected states
-  for(int i=0; i < int(psi_amp.size()); i++){
-    double E0 = std::real(matrix_diag(psi_amp[i]));
-    int idx = psi_amp[i].idx;
-    for(int j = 0; j < NUM_MODES; j++){
-      ket_pair kp = get_connected_states(psi_amp[i],j);
-      int level = psi_amp[i].get_mode(j);
-      if( (kp.raised.i != state_ket::null_i) && (magnitude* g[level+1][j]> params.energy_cutoff) ){
-	//Check to see if energy is within delta_e
-	double E_k = std::real(matrix_diag(kp.raised ));
-	double V_ik = g[level+1][j];
-	if(std::abs(E_k-E0) <= delta_e){
-	  if(binary_search_state(kp.raised, psi_lbl) < 0){
-	    //state is not in current space, so we add it as decay term
-	    decay_diags[idx] += complex<double>(0,-(V_ik*V_ik)/delta_e);
-	  }
-	}
-      }
-      if( (kp.lowered.i != state_ket::null_i) && (magnitude*g[level][j] > params.energy_cutoff)){
-	//Check to see if energy is within delta_e
-	double E_k = std::real(matrix_diag(kp.lowered ));
-	double V_ik = g[level][j];
-	if(std::abs(E_k-E0) <= delta_e){
-	  //state is within energy threshold. 
-	  if(binary_search_state(kp.lowered,psi_lbl) < 0){
-	    //State is not in current space, add it as complex energy
-	    //Given by fermi's golden rule
-	    decay_diags[idx] += complex<double>(0,(V_ik*V_ik)/delta_e);
-	  }
-	}
-      }
-
-    }
-  }
-  
-  return(decay_diags);
-}
-
 
 void hamiltonian::set_zero_except_init(){
   using namespace std;

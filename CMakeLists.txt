@@ -6,9 +6,11 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(DEFAULT_NUM_MODES 2)
 set(DEFAULT_NUM_BITS  8)
 
-set(rapidjson_DIR home/ethan/libraries/builds/rapidjson/include)
-set(Eigen3_DIR /home/ethan/libraries/builds/eigen_3_install)
-FIND_PACKAGE( Boost REQUIRED )
+set(rapidjson_DIR ${CMAKE_CURRENT_LIST_DIR}/extern/rapidjson/include})
+set(Eigen3_DIR extern/eigen) 
+set(BOOST_DIR extern/BOOST)
+include_directories(extern/rapidjson/include)
+include_directories(extern/format/include, extern/program_options/include, extern/program_options/include)
 find_package(Eigen3 3.3 NO_MODULE REQUIRED)
 
 
