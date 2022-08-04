@@ -39,7 +39,14 @@ add_subdirectory(src)
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11)	
-pybind11_add_module(${pyket} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)	
+pybind11_add_module(${pyket} SHARED 
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/main_hamiltonian.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/main_state_ket.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/main_state_vector.cpp
+                            
+                     )	
+
 
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/pyket_config.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/pyket_config.hpp @ONLY)
