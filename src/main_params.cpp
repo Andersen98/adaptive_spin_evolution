@@ -1,20 +1,25 @@
 #include "pyket_config.hpp"
 #include<pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/complex.h>
 #include<vector>
+#include <string>
 #include"configuration.hpp"
-
 #include "hamiltonian.hpp"
+#include "input_tools.hpp"
+
 
 PYBIND11_MAKE_OPAQUE(State_Ket<NUM_MODES,NUM_BITS>);
 PYBIND11_MAKE_OPAQUE(std::vector<State_Ket<NUM_MODES,NUM_BITS>>);
 PYBIND11_MAKE_OPAQUE(hamiltonian);
 
 namespace py = pybind11;
+using namespace std;
 
 using state_ket = State_Ket<NUM_MODES,NUM_BITS>;
 using state_vector = std::vector<state_ket>;
 
-void(py::module_ &m){
+void init_params(py::module_ &m){
 
 
   py::class_<param_vals>(m, "Params")

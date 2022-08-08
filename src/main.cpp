@@ -29,19 +29,19 @@ using state_vector = std::vector<state_ket>;
 /* include definitions for module initialization 
 defined in main_*****.cpp `
 */
-void init_main_hamiltonian(py::module_ &);
-void init_main_state_ket(py::module_ &);
-void init_main_state_vector(py::module_ &);
-void init_main_params(py::module_ &);
+void init_hamiltonian(py::module_ &);
+void init_state_ket(py::module_ &);
+void init_state_vector(py::module_ &);
+void init_params(py::module_ &);
 
 
 PYBIND11_MODULE(PYKET,m){
   
   /* initialize separately defined module components */
-  init_main_state_ket(m);
-  init_main_state_vector(m);
-  init_main_hamiltonian(m);
-  init_main_params(m);
+  init_state_ket(m);
+  init_state_vector(m);
+  init_hamiltonian(m);
+  init_params(m);
 
   m.doc() = "adaptive spin evolution ported to python";
   m.def("num_modes",[](){return int( NUM_MODES);},"Number of allowed modes in a state");

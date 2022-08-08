@@ -44,6 +44,7 @@ pybind11_add_module(${pyket} SHARED
                             ${CMAKE_CURRENT_SOURCE_DIR}/src/main_hamiltonian.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/src/main_state_ket.cpp
                             ${CMAKE_CURRENT_SOURCE_DIR}/src/main_state_vector.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/src/main_params.cpp
                             
                      )	
 

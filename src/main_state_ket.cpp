@@ -1,6 +1,7 @@
 #include "pyket_config.hpp"
 #include<pybind11/pybind11.h>
-
+#include <pybind11/stl.h>
+#include <pybind11/complex.h>
 #include"configuration.hpp"
 
 PYBIND11_MAKE_OPAQUE(State_Ket<NUM_MODES,NUM_BITS>);
