@@ -3,9 +3,9 @@
 
 ## Entry <2022-06-15 Wed>
 ---
-- [x] make diagram of 1st order transition
-- [x] add diagram files to 
----
-- [x] make diagram of 1st order transition
-- [x] add diagram files to docs/images/
+- DONE make diagram of 1st order transition (docs/images)
 
+## Entry 2022-10-23
+---
+- TODO Fixup Build System
+- TODO Configure Debugging
