@@ -1,6 +1,6 @@
 #include "hamiltonian.hpp"
 #include "../io_tools/input_tools.hpp"
-#include <boost/numeric/ublas/io.hpp>
+//#include <boost/numeric/ublas/io.hpp>
 
 hamiltonian::hamiltonian(const std::string &json_str):hamiltonian(load_json_str(json_str)){}
 

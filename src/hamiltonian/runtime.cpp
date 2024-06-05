@@ -37,7 +37,8 @@ void hamiltonian::run_grow(){
 
 
 }
-void hamiltonian::get_decay_diags(int delta_e){
+/* TODO FIX THIS
+ * vector<complex<double>> hamiltonian::get_decay_diags(int delta_e){
 
   vector<complex<double>> decay_diags(psi_lbl.size());
   
@@ -78,7 +79,7 @@ void hamiltonian::get_decay_diags(int delta_e){
   
   return(decay_diags);
 }
-
+*/
 
 void hamiltonian::set_zero_except_init(){
   using namespace std;

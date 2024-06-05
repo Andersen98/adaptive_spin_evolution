@@ -137,6 +137,7 @@ public:
   std::vector<std::pair<int, int>> get_spin_idxs()const;
   pair<double,double> evolve_state(double time);
   pair<double,double> evolve_step(complex<double> factor);
+  //std::vector<complex<double>> get_decay_diags(int delta_e); TODO: Fix this
   //par_runtime.cpp
   void par_test_one();
   void par_test_two();
