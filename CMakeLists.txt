@@ -6,10 +6,13 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(DEFAULT_NUM_MODES 2)
 set(DEFAULT_NUM_BITS  8)
 
-set(rapidjson_DIR home/ethan/libraries/builds/rapidjson/include)
-set(Eigen3_DIR /home/ethan/libraries/builds/eigen_3_install)
-FIND_PACKAGE( Boost REQUIRED )
-find_package(Eigen3 3.3 NO_MODULE REQUIRED)
+add_subdirectory(extern/boost)
+add_subdirectory(extern/eigen)
+
+#set(rapidjson_DIR home/ethan/libraries/builds/rapidjson/include)
+#set(Eigen3_DIR /home/ethan/libraries/builds/eigen_3_install)
+#FIND_PACKAGE( Boost REQUIRED )
+#find_package(Eigen3 3.3 NO_MODULE REQUIRED)
 
 
 
@@ -21,6 +24,7 @@ if(NOT DEFINED NUM_BITS)
        message(STATUS "Using Default Number of bits per mode")
        set(NUM_BITS  ${DEFAULT_NUM_BITS})
 endif()
+
 #-------DEFINE MODULE NAME------------
 set(pyket pyket${NUM_MODES}_${NUM_BITS})
 
@@ -42,8 +46,9 @@ pybind11_add_module(${pyket} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/pyket_config.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/pyket_config.hpp @ONLY)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_include_directories(HamiltonianFuncs SYSTEM PUBLIC ${rapidjson_DIR}/include)
-target_link_libraries (HamiltonianFuncs Eigen3::Eigen)
+target_include_directories(HamiltonianFuncs SYSTEM PUBLIC extern/rapidjson/include)
+target_link_libraries(HamiltonianFuncs Eigen3::Eigen)
+target_link_libraries(HamiltonianFuncs Boost::format)
 target_compile_options(HamiltonianFuncs PRIVATE -fPIC)
 target_link_libraries(${pyket} PRIVATE HamiltonianFuncs)
 find_package(OpenMP)

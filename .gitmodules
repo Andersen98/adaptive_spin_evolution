@@ -1,7 +1,3 @@
-[submodule "extern/pybind11"]
-	path = extern/pybind11
-	url = https://github.com/pybind/pybind11.git
-	branch = stable
 [submodule "extern/boost-cmake"]
 	path = extern/boost-cmake
 	url = https://github.com/Orphis/boost-cmake.git
@@ -26,3 +22,7 @@
 [submodule "extern/boost"]
 	path = extern/boost
 	url = https://github.com/boostorg/boost.git
+[submodule "extern/pybind11"]
+	path = extern/pybind11
+	url = ../../pybind/pybind11
+	branch = stable
