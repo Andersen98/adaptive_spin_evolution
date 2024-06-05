@@ -1,5 +1,2 @@
-.env
-.env.*
-extern/**
-cmake-build-debug/**
-cmake-build-release/**
+
+.vscode/settings.json
